@@ -13,7 +13,9 @@ namespace TIP_Client.ViewModel
 {
     public class MainVM : ViewModelBase
     {
+        private BufferedWaveProvider bwp;
         private WaveInEvent waveIn;
+        private WaveOut waveOut;
         public MainVM()
         {
             OutputDeviceList = new ObservableCollection<WaveOutCapabilities>();
@@ -29,9 +31,6 @@ namespace TIP_Client.ViewModel
             {
                 InputDeviceList.Add(WaveIn.GetCapabilities(waveInDevice));
             }
-
-
-
             RecordCommand = new Command((args) =>
             {
                 init();
@@ -124,24 +123,39 @@ namespace TIP_Client.ViewModel
         {
             waveIn = new WaveInEvent();
             waveIn.WaveFormat = new WaveFormat(44100, 2);
-            waveIn.DeviceNumber = getDevice(InputDeviceSelected);
-            waveIn.BufferMilliseconds = 1000;
+            waveIn.DeviceNumber = getDeviceIn(InputDeviceSelected);
+            waveIn.BufferMilliseconds = 100;
             waveIn.DataAvailable += new EventHandler<WaveInEventArgs>(SendCaptureSamples);
+            waveOut = new WaveOut();
+            waveOut.DeviceNumber = getDeviceOut(OutputDeviceSelected);
+            bwp = new BufferedWaveProvider(waveIn.WaveFormat);
             waveIn.StartRecording();
         }
 
-        static void SendCaptureSamples(object sender, WaveInEventArgs e)
+        private void SendCaptureSamples(object sender, WaveInEventArgs e)
         {
-            Console.WriteLine("Bytes recorded: {0}", e.BytesRecorded);
             byte[] bytes = new byte[1024];
+            bwp.AddSamples(e.Buffer, 0, e.BytesRecorded);
+            //TAK NIE MOZE BYĆ JAK COŚ BO PAMIĘĆ ŻRE
+            waveOut.Init(bwp);
+            waveOut.Play();
 
         }
-        private int getDevice(WaveInCapabilities wIn)
+        private int getDeviceIn(WaveInCapabilities wIn)
         {
             int waveInDevices = WaveIn.DeviceCount;
             for (int waveInDevice = 0; waveInDevice < waveInDevices; waveInDevice++)
             {
                 if (wIn.ProductName == WaveIn.GetCapabilities(waveInDevice).ProductName) return waveInDevice;
+            }
+            return 0;
+        }
+        private int getDeviceOut(WaveOutCapabilities wOut)
+        {
+            int waveOutDevices = WaveOut.DeviceCount;
+            for (int waveOutDevice = 0; waveOutDevice < waveOutDevices; waveOutDevice++)
+            {
+                if (wOut.ProductName == WaveOut.GetCapabilities(waveOutDevice).ProductName) return waveOutDevice;
             }
             return 0;
         }
