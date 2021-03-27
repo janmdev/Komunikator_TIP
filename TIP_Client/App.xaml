@@ -1,0 +1,13 @@
+﻿<Application x:Class="TIP_Client.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:TIP_Client"
+             xmlns:vm="clr-namespace:TIP_Client.ViewModel"
+             xmlns:views="clr-namespace:TIP_Client.View"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <DataTemplate DataType="{x:Type vm:MainVM}">
+            <views:MainView/>
+        </DataTemplate>
+    </Application.Resources>
+</Application>
