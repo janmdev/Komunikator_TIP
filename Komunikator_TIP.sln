@@ -5,7 +5,9 @@ VisualStudioVersion = 16.0.30907.101
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Komunikator_TIP", "Komunikator_TIP\Komunikator_TIP.csproj", "{AB8FBD63-FA6F-4D4A-8AA4-357BBCF544B5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TIP_Client", "TIP_Client\TIP_Client.csproj", "{1661A0D7-3D83-4A9D-BBFF-80C15B94337A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TIP_Client", "TIP_Client\TIP_Client.csproj", "{1661A0D7-3D83-4A9D-BBFF-80C15B94337A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TIP_Server", "TIP_Server\TIP_Server.csproj", "{A3C742F1-F4CC-44C4-B76E-BDE835550507}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{1661A0D7-3D83-4A9D-BBFF-80C15B94337A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1661A0D7-3D83-4A9D-BBFF-80C15B94337A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1661A0D7-3D83-4A9D-BBFF-80C15B94337A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A3C742F1-F4CC-44C4-B76E-BDE835550507}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3C742F1-F4CC-44C4-B76E-BDE835550507}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3C742F1-F4CC-44C4-B76E-BDE835550507}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3C742F1-F4CC-44C4-B76E-BDE835550507}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
