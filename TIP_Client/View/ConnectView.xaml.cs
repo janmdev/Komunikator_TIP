@@ -16,11 +16,11 @@ using System.Windows.Shapes;
 namespace TIP_Client.View
 {
     /// <summary>
-    /// Interaction logic for MainView.xaml
+    /// Interaction logic for ConnectView.xaml
     /// </summary>
-    public partial class MainView : UserControl
+    public partial class ConnectView : UserControl
     {
-        public MainView()
+        public ConnectView()
         {
             InitializeComponent();
         }
