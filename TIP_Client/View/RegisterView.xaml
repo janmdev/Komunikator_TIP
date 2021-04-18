@@ -1,0 +1,28 @@
+﻿<UserControl x:Class="TIP_Client.View.RegisterView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:TIP_Client.View"
+             mc:Ignorable="d" 
+             xmlns:converter="clr-namespace:TIP_Client.Converters"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <converter:MultiBindingToArray x:Key="cv" />
+    </UserControl.Resources>
+    <Grid>
+        <TextBox HorizontalAlignment="Center" Height="33" Margin="0,106,0,0" Text="TextBox" TextWrapping="Wrap" VerticalAlignment="Top" Width="205"/>
+        <PasswordBox HorizontalAlignment="Center" Name="PasswordBox" Height="33" Margin="0,167,0,0" VerticalAlignment="Top" Width="205"/>
+        <PasswordBox HorizontalAlignment="Center" Name="PasswordBoxConfirm" Height="33" Margin="0,225,0,0" VerticalAlignment="Top" Width="205"/>
+        <Button Content="Register" Command="{Binding RegisterCommand}" HorizontalAlignment="Center" Height="33" Margin="0,283,0,0" VerticalAlignment="Top" Width="205"/>
+        <Button Content="Go back" Command="{Binding BackCommand}" HorizontalAlignment="Left" Height="45" VerticalAlignment="Top" Width="70">
+            <Button.CommandParameter>
+                <MultiBinding Converter="{StaticResource cv}">
+                    <Binding ElementName="PasswordBox"/>
+                    <Binding ElementName="PasswordBoxConfirm"/>
+                </MultiBinding>
+            </Button.CommandParameter>
+        </Button>
+
+    </Grid>
+</UserControl>

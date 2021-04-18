@@ -16,8 +16,9 @@ namespace TIP_Client.ViewModel
         private BufferedWaveProvider bwp;
         private WaveInEvent waveIn;
         private WaveOut waveOut;
-        public TestingVM()
+        public TestingVM(MainVM mainVM)
         {
+            this.mainVM = mainVM;
             OutputDeviceList = new ObservableCollection<WaveOutCapabilities>();
             int waveOutDevices = WaveOut.DeviceCount;
             for (int waveOutDevice = 0; waveOutDevice < waveOutDevices; waveOutDevice++)
@@ -36,6 +37,7 @@ namespace TIP_Client.ViewModel
                 init();
             });
         }
+
         private ViewModelBase selectedVM;
         public ViewModelBase SelectedVM
         {
@@ -105,6 +107,8 @@ namespace TIP_Client.ViewModel
             }
         }
         private bool recordChecked;
+        private MainVM mainVM;
+
         public bool RecordChecked
         {
             get

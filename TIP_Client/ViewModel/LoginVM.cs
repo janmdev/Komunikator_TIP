@@ -34,14 +34,23 @@ namespace TIP_Client.ViewModel
         public ICommand LoginCommand { get; set; }
         private void LoginF(object args)
         {
-            throw new System.NotImplementedException();
+            if (LoginValidated())
+            {
+                mainVM.NavigateTo("Testing");
+            }
+        }
+
+        private bool LoginValidated()
+        {
+            //NOT IMPLEMENTED
+            return true;
         }
 
         public ICommand RegisterCommand { get; set; }
 
         private void RegisterNav()
         {
-            throw new NotImplementedException();
+            mainVM.NavigateTo("Register");
         }
     }
 }
