@@ -4,6 +4,13 @@ using System.Text;
 
 namespace Shared
 {
+
+    //  Protokół 
+    //              +-----------------------------------------+
+    //  Bajty:      |  0  |  1  |  2  |        3-65538        |
+    //  Zawartość:  |Code | Data size |      Data (JSON)      |
+    //              +-----------------------------------------+
+
     public static class TCP_Protocol
     {
         private const int codeBufferSize = 1;

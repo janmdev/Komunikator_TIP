@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using Shared.DataClasses;
 using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
 
 namespace TIP_Server
 {
@@ -40,7 +41,7 @@ namespace TIP_Server
             while (processClient) {
                 var command = TCP_Protocol.Read(stream);
                 ClientCodes clientCode = (ClientCodes)command.code;
-                string dataJSON = command.dataJSON;
+                string clientDataJSON = command.dataJSON;
 
                 ServerCodes serverCode = ServerCodes.OK;
                 switch (clientCode) {
@@ -48,19 +49,19 @@ namespace TIP_Server
                         serverCode = Disconnect(SID, ref processClient);
                         break;
                     case ClientCodes.LOGIN:
-                        serverCode = Login(SID, dataJSON);
+                        serverCode = Login(SID, clientDataJSON);
                         break;
                     case ClientCodes.LOGOUT:
                         serverCode = Logout(SID);
                         break;
                     case ClientCodes.REGISTRATION:
-                        serverCode = Registration(dataJSON);
+                        serverCode = Registration(clientDataJSON);
                         break;
                 }
             }
         }
 
-        //***** OPTIONS METHODS *****
+        //***** CLIENT CODES METHODS *****
 
         public ServerCodes Disconnect(long SID, ref bool processClient) {
             processClient = false;
@@ -71,13 +72,12 @@ namespace TIP_Server
 
         public ServerCodes Login(long SID, string dataJSON) {
             Login loginData = JsonSerializer.Deserialize<Login>(dataJSON);
-            //TODO: Server data validation
-            if (DatabaseControl.CheckUserPassword(loginData.Username, loginData.Password)) {
-                clientsDict[SID].Username = loginData.Username;
-                clientsDict[SID].Logged = true;
-                return ServerCodes.OK;
-            } 
-            else return ServerCodes.WRONG_USERNAME_OR_PASSWORD;
+            if (!Regex.Match(loginData.Username, "^[\\w]{3,}$").Success) return ServerCodes.WRONG_USERNAME_OR_PASSWORD;
+            if (!Regex.Match(loginData.Password, "(?=.*[!\"#$%&'()*+,\\-\\./:<>=?@\\[\\]\\^_{}|~])(?=.*[A-Z])(?!.*\\$).{8,255}").Success) return ServerCodes.WRONG_USERNAME_OR_PASSWORD;
+            if (!DatabaseControl.CheckUserPassword(loginData.Username, loginData.Password)) return ServerCodes.WRONG_USERNAME_OR_PASSWORD;
+            clientsDict[SID].Username = loginData.Username;
+            clientsDict[SID].Logged = true;
+            return ServerCodes.OK;
         }
 
         public ServerCodes Logout(long SID) {
@@ -87,9 +87,10 @@ namespace TIP_Server
 
         public ServerCodes Registration(string dataJSON) {
             Registration registrationData = JsonSerializer.Deserialize<Registration>(dataJSON);
-            //TODO: Server data validation
-            if (DatabaseControl.AddNewUser(registrationData.Username, registrationData.Password) >= 0) return ServerCodes.OK;
-            else return ServerCodes.REGISTRATION_ERROR;
+            if (!Regex.Match(registrationData.Username, "^[\\w]{3,}$").Success) return ServerCodes.REGISTRATION_ERROR;
+            if (!Regex.Match(registrationData.Password, "(?=.*[!\"#$%&'()*+,\\-\\./:<>=?@\\[\\]\\^_{}|~])(?=.*[A-Z])(?!.*\\$).{8,255}").Success) return ServerCodes.REGISTRATION_ERROR;
+            if (DatabaseControl.AddNewUser(registrationData.Username, registrationData.Password) < 0) return ServerCodes.REGISTRATION_ERROR;
+            return ServerCodes.OK;
 
         }
 
