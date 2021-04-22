@@ -6,8 +6,17 @@
              xmlns:views="clr-namespace:TIP_Client.View"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <DataTemplate DataType="{x:Type vm:MainVM}">
-            <views:MainView/>
+        <DataTemplate DataType="{x:Type vm:TestingVM}">
+            <views:TestingView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ConnectVM}">
+            <views:ConnectView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:LoginVM}">
+            <views:LoginView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:RegisterVM}">
+            <views:RegisterView/>
         </DataTemplate>
     </Application.Resources>
 </Application>
