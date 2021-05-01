@@ -8,21 +8,21 @@
              xmlns:converter="clr-namespace:TIP_Client.Converters"
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
-        <converter:MultiBindingToArray x:Key="cv" />
+        <converter:MultiBindingToArray x:Key="Cv" />
     </UserControl.Resources>
     <Grid>
-        <TextBox HorizontalAlignment="Center" Height="33" Margin="0,106,0,0" Text="TextBox" TextWrapping="Wrap" VerticalAlignment="Top" Width="205"/>
-        <PasswordBox HorizontalAlignment="Center" Name="PasswordBox" Height="33" Margin="0,167,0,0" VerticalAlignment="Top" Width="205"/>
-        <PasswordBox HorizontalAlignment="Center" Name="PasswordBoxConfirm" Height="33" Margin="0,225,0,0" VerticalAlignment="Top" Width="205"/>
-        <Button Content="Register" Command="{Binding RegisterCommand}" HorizontalAlignment="Center" Height="33" Margin="0,283,0,0" VerticalAlignment="Top" Width="205"/>
-        <Button Content="Go back" Command="{Binding BackCommand}" HorizontalAlignment="Left" Height="45" VerticalAlignment="Top" Width="70">
+        <TextBox HorizontalAlignment="Center" Height="33" Margin="0,106,0,0" Text="{Binding Login}" TextWrapping="Wrap" VerticalAlignment="Top" Width="205"/>
+        <PasswordBox HorizontalAlignment="Center" Name="Password" Height="33" Margin="0,167,0,0" VerticalAlignment="Top" Width="205"/>
+        <PasswordBox HorizontalAlignment="Center" Name="PasswordConfirm" Height="33" Margin="0,225,0,0" VerticalAlignment="Top" Width="205"/>
+        <Button Content="Register" Command="{Binding RegisterCommand}" HorizontalAlignment="Center" Height="33" Margin="0,283,0,0" VerticalAlignment="Top" Width="205">
             <Button.CommandParameter>
-                <MultiBinding Converter="{StaticResource cv}">
-                    <Binding ElementName="PasswordBox"/>
-                    <Binding ElementName="PasswordBoxConfirm"/>
+                <MultiBinding Converter="{StaticResource Cv}">
+                    <Binding ElementName="Password"/>
+                    <Binding ElementName="PasswordConfirm"/>
                 </MultiBinding>
             </Button.CommandParameter>
         </Button>
+        <Button Content="Go back" Command="{Binding BackCommand}" HorizontalAlignment="Left" Height="45" VerticalAlignment="Top" Width="70"/>
 
     </Grid>
 </UserControl>

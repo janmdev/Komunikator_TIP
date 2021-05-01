@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,7 +16,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using TIP_Client.ViewModel;
-using Path = System.Windows.Shapes.Path;
 
 namespace TIP_Client
 {
@@ -26,7 +28,16 @@ namespace TIP_Client
         {
             InitializeComponent();
             var mainViewModel = new MainVM();
-            if (ConfigExists()) mainViewModel.NavigateTo("Login");
+            if (ConfigExists() && ConfigValid())
+            {
+                ConnectionModel cm = JsonSerializer.Deserialize<ConnectionModel>(File.ReadAllText(Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tip kom",
+                    "config.json")));
+                Task.Run(async () => await Client.Connect(cm.IPAddr,cm.Port)).ContinueWith(t =>
+                {
+                    mainViewModel.NavigateTo(t.Result ? "Login" : "Connect");
+                });
+            }
             else mainViewModel.NavigateTo("Connect");
             this.DataContext = mainViewModel;
         }
@@ -34,14 +45,35 @@ namespace TIP_Client
         {
             bool flag = false;
 
-            if (!File.Exists(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tip kom", "config.json")))
+            if (!File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tip kom", "config.json")))
             {
                 Directory.CreateDirectory(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tip kom"));
-                File.Create(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tip kom", "config.json"));
+                File.Create(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tip kom", "config.json"));
             }
             else flag = true;
 
             return flag;
         }
+
+        private bool ConfigValid()
+        {
+            bool flag = false;
+            try
+            {
+                ConnectionModel cm = JsonSerializer.Deserialize<ConnectionModel>(File.ReadAllText(Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tip kom",
+                    "config.json")));
+                if (cm.Port != 0 && Regex.Match(cm.IPAddr,@"^((25[0-5]|(2[0-4]|1[0-9]|[1-9]|)[0-9])(\.(?!$)|$)){4}$").Success)
+                {
+                    flag = true;
+                }
+            }
+            catch (Exception)
+            { }
+
+            return flag;
+        }
+
+
     }
 }

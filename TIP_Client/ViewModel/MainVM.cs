@@ -34,7 +34,7 @@ namespace TIP_Client.ViewModel
                     case "Testing":
                         SelectedVM = new TestingVM(this);
                         break;
-                    case "Register":
+                    case "RegisterAction":
                         SelectedVM = new RegisterVM(this);
                         break;
                 }
