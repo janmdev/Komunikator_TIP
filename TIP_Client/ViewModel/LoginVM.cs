@@ -50,7 +50,8 @@ namespace TIP_Client.ViewModel
 
         private void RegisterNav()
         {
-            mainVM.NavigateTo("Register");
+
+            mainVM.NavigateTo("RegisterAction");
         }
     }
 }
