@@ -45,14 +45,13 @@ namespace TIP_Client
                 return false;
             }
         }
-        public async static Task<bool> Register(string login_, string password)
+        public static async Task<bool> Register(string login_, string password)
         {
-            string md5 = Hasher.CreateMD5(password);
             var code = Shared.ClientCodes.REGISTRATION;
             var data = JsonSerializer.Serialize(new Shared.DataClasses.Registration()
             {
                 Username = login_,
-                Password = md5
+                Password = password
             });
             var length = data.Length;
             TCP_Protocol.Send(TCP.GetStream(),Convert.ToByte(code),data);
@@ -66,8 +65,119 @@ namespace TIP_Client
             else return false;
         }
 
+        public static async Task<bool> Login(string login_, string password)
+        {
+            var code = Shared.ClientCodes.LOGIN;
+            var data = JsonSerializer.Serialize(new Shared.DataClasses.Registration()
+            {
+                Username = login_,
+                Password = password
+            });
+            var length = data.Length;
+            TCP_Protocol.Send(TCP.GetStream(), Convert.ToByte(code), data);
+            string result = await getUserInput(new byte[1024]);
 
-        private async static Task<string> getUserInput(byte[] buffer)
+            if (result == "ACCOUNTCREATED")
+            {
+                //login = login_;
+                return true;
+            }
+            else return false;
+        }
+
+        public static async Task<bool> CreateRoom(string name, string  desc, int roomSize)
+        {
+            var code = Shared.ClientCodes.CREATE_ROOM;
+            var data = JsonSerializer.Serialize(new Shared.DataClasses.CreateRoom()
+            {
+                Name = name,
+                Description = desc,
+                UsersLimit = Convert.ToByte(roomSize)
+            });
+            var length = data.Length;
+            TCP_Protocol.Send(TCP.GetStream(), Convert.ToByte(code), data);
+            string result = await getUserInput(new byte[1024]);
+
+            if (result == "RoomAdded")
+            {
+                //login = login_;
+                return true;
+            }
+            else return false;
+        }
+
+        public static async Task<bool> EnterRoom(long id)
+        {
+            var code = Shared.ClientCodes.ENTER_ROOM;
+            var data = JsonSerializer.Serialize(new Shared.DataClasses.EnterRoom()
+            {
+                RoomID = id
+            });
+            var length = data.Length;
+            TCP_Protocol.Send(TCP.GetStream(), Convert.ToByte(code), data);
+            string result = await getUserInput(new byte[1024]);
+
+            if (result == "")
+            {
+                //login = login_;
+                return true;
+            }
+            else return false;
+        }
+
+        public static async Task<bool> LeaveRoom(long id)
+        {
+            var code = Shared.ClientCodes.LOGOUT;//leave
+            var data = JsonSerializer.Serialize(new Shared.DataClasses.LeaveRoom()
+            {
+                RoomID = id,
+            });
+            var length = data.Length;
+            TCP_Protocol.Send(TCP.GetStream(), Convert.ToByte(code), data);
+            string result = await getUserInput(new byte[1024]);
+
+            if (result == "RoomAdded")
+            {
+                //login = login_;
+                return true;
+            }
+            else return false;
+        }
+
+        public static async Task<bool> DeleteRoom(long id)
+        {
+            var code = Shared.ClientCodes.DELETE_ROOM;
+            var data = JsonSerializer.Serialize(new Shared.DataClasses.DeleteRoom()
+            {
+                RoomID = id
+            });
+            var length = data.Length;
+            TCP_Protocol.Send(TCP.GetStream(), Convert.ToByte(code), data);
+            string result = await getUserInput(new byte[1024]);
+
+            if (result == "Deleted")
+            {
+                //login = login_;
+                return true;
+            }
+            else return false;
+        }
+
+        public static async Task<bool> Logout(long id)
+        {
+            var code = Shared.ClientCodes.LOGOUT;
+            TCP_Protocol.Send(TCP.GetStream(), Convert.ToByte(code), null);
+            string result = await getUserInput(new byte[1024]);
+
+            if (result == "Logout")
+            {
+                //login = login_;
+                return true;
+            }
+            else return false;
+        }
+
+        private static async Task<string> getUserInput(byte[] buffer)
         {
             await TCP.GetStream().ReadAsync(buffer, 0, buffer.Length);
             //await TCP.GetStream().ReadAsync(new byte[10]);
