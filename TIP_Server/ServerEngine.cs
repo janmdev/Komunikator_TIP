@@ -19,6 +19,7 @@ namespace TIP_Server
 
         private ConcurrentDictionary<long, Client> clients;
         private ConcurrentDictionary<long, Room> rooms;
+        private ConcurrentDictionary<string, ConcurrentQueue<byte[]>> recivedAudio;
 
         private readonly object lastCIDIncLock;
 
@@ -27,11 +28,12 @@ namespace TIP_Server
             lastCIDIncLock = new object();
             clients = new ConcurrentDictionary<long, Client>();
             rooms = DatabaseControl.GetRooms();
+            recivedAudio = new ConcurrentDictionary<string, ConcurrentQueue<byte[]>>();
         }
 
         public void ClientProcessAsync(TcpClient tcpClient) {
             NetworkStream stream = tcpClient.GetStream();
-            EndPoint clientEndPoint = tcpClient.Client.RemoteEndPoint;
+            IPEndPoint clientEndPoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
             bool processClient = true;
             long CID = 0;
 
@@ -77,9 +79,27 @@ namespace TIP_Server
             }
         }
 
+        public void AudioListenerAsync(UdpClient udpAudioListener, ref bool runServer) {
+            while (runServer) {
+                IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                byte[] audioBytes = udpAudioListener.Receive(ref clientEndPoint);
+                recivedAudio[clientEndPoint.ToString()].Enqueue(audioBytes);
+            }
+        }
+
         private void ClientAudioProcessAsync(long CID) {
+            IPEndPoint clientEndPoint = clients[CID].ClientEndPoint;
+            string clientEndPointString = clientEndPoint.ToString();
+            UdpClient udpAudioSender = new UdpClient();
+
             while (clients[CID].InRoom) {
-                //TODO
+                if (recivedAudio.ContainsKey(clientEndPointString) && !recivedAudio[clientEndPointString].IsEmpty) {
+                    recivedAudio[clientEndPointString].TryDequeue(out byte[] audioBytes);
+                    foreach (long clientInRoom in rooms[clients[CID].CurrentRoomID].ClientsInRoom) {
+                        if (clientInRoom == CID) continue;
+                        udpAudioSender.Send(audioBytes, audioBytes.Length, clients[clientInRoom].ClientEndPoint);
+                    }
+                }
             }
         }
 

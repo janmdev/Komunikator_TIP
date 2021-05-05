@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
@@ -9,22 +10,32 @@ namespace TIP_Server
     {
         static void Main(string[] args) {
 
+            string serverIP = "127.0.0.1";
+            ushort serverPort = 41234;
             bool runServer = true;
 
-            TCP_Connection tcpConnection = new TCP_Connection("127.0.0.1", 41234);
-            tcpConnection.Start();
             ServerEngine serverEngine = new ServerEngine();
 
-            List<Task> clientsTasks = new List<Task>();
+            Task tcpTask = Task.Run(() => {
+                TCP_Connection tcpConnection = new TCP_Connection(serverIP, serverPort);
+                tcpConnection.Start();
+                List<Task> clientsTasks = new List<Task>();
+                while (runServer) {
+                    TcpClient tcpClient = tcpConnection.GetClient();
+                    clientsTasks.Add(Task.Run(() => {
+                        serverEngine.ClientProcessAsync(tcpClient);
+                    }));
+                }
+                tcpConnection.Stop();
+            });
 
-            while (runServer) {
-                TcpClient tcpClient = tcpConnection.GetClient();
-                clientsTasks.Add(Task.Run(() => {
-                    serverEngine.ClientProcessAsync(tcpClient);
-                }));
-            }
+            Task udpTask = Task.Run(() => {
+                UdpClient udpClient = new UdpClient(new IPEndPoint(IPAddress.Parse(serverIP), serverPort));
+                serverEngine.AudioListenerAsync(udpClient, ref runServer);
+            });
 
-            tcpConnection.Stop();
+            tcpTask.Wait();
+            udpTask.Wait();
         }
     }
 }

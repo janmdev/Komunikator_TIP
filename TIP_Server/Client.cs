@@ -15,10 +15,10 @@ namespace TIP_Server
         public long CurrentRoomID { get; set; }
         public bool InRoom { get { return CurrentRoomID > -1; } set { if (!value) CurrentRoomID = -1; } }
         public bool Talking { get; set; }
-        public EndPoint ClientEndPoint { get; set; }
+        public IPEndPoint ClientEndPoint { get; set; }
         public Task AudioProcessTask { get; set; }
 
-        public Client(EndPoint clientEndPoint, long userID = -1, string username = "", bool logged = false, long currentRoomID = -1, bool talking = false, Task audioProcessTask = null) {
+        public Client(IPEndPoint clientEndPoint, long userID = -1, string username = "", bool logged = false, long currentRoomID = -1, bool talking = false, Task audioProcessTask = null) {
             UserID = userID;
             Username = username;
             Logged = logged;
