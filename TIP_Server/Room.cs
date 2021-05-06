@@ -17,7 +17,8 @@ namespace TIP_Server
         public byte UsersLimit { get; set; }
         public string Description { get; set; }
         public List<long> ClientsInRoom { get { lock (clientsListLock) return clientsInRoom; } }
-        public bool Active { get { return ClientsInRoom.Count > 0; } }
+        public byte ClientsInRoomCount { get { lock (clientsListLock) return (byte)clientsInRoom.Count; } }
+        public bool Active { get { lock (clientsListLock) return ClientsInRoom.Count > 0; } }
 
         public Room(long roomCreatorUserID, string roomName, byte usersLimit, string description) {
             RoomCreatorUserID = roomCreatorUserID;

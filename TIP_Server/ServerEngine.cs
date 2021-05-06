@@ -6,7 +6,8 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Text.Json;
-using Shared.DataClasses;
+using Shared.DataClasses.Client;
+using Shared.DataClasses.Server;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using System.Net;
@@ -44,38 +45,51 @@ namespace TIP_Server
 
             clients.TryAdd(CID, new Client(clientEndPoint));
 
+            //TODO: Talking
             while (processClient) {
                 var command = TCP_Protocol.Read(stream);
                 ClientCodes clientCode = (ClientCodes)command.code;
                 string clientDataJSON = command.dataJSON;
 
                 ServerCodes serverCode = ServerCodes.OK;
+                string serverDataJSON = "";
                 switch (clientCode) {
                     case ClientCodes.DISCONNECT:
-                        serverCode = Disconnect(CID, ref processClient);
+                        serverCode = DisconnectMethod(CID, ref processClient);
                         break;
                     case ClientCodes.LOGIN:
-                        serverCode = Login(CID, clientDataJSON);
+                        serverCode = LoginMethod(CID, clientDataJSON);
                         break;
                     case ClientCodes.LOGOUT:
-                        serverCode = Logout(CID);
+                        serverCode = LogoutMethod(CID);
                         break;
                     case ClientCodes.REGISTRATION:
-                        serverCode = Registration(CID, clientDataJSON);
+                        serverCode = RegistrationMethod(CID, clientDataJSON);
                         break;
                     case ClientCodes.CREATE_ROOM:
-                        serverCode = CreateRoom(CID, clientDataJSON);
+                        serverCode = CreateRoomMethod(CID, clientDataJSON);
                         break;
                     case ClientCodes.DELETE_ROOM:
-                        serverCode = DeleteRoom(CID, clientDataJSON);
+                        serverCode = DeleteRoomMethod(CID, clientDataJSON);
                         break;
                     case ClientCodes.ENTER_ROOM:
-                        serverCode = EnterRoom(CID, clientDataJSON);
+                        serverCode = EnterRoomMethod(CID, clientDataJSON);
+                        break;
+                    case ClientCodes.LEAVE_ROOM:
+                        serverCode = LeaveRoomMethod(CID);
+                        break;
+                    case ClientCodes.GET_ROOMS:
+                        (serverCode, serverDataJSON) = GetRoomsMethod(CID);
+                        break;
+                    case ClientCodes.GET_USERS:
+                        (serverCode, serverDataJSON) = GetUsersMethod(CID);
                         break;
                     default:
                         serverCode = ServerCodes.UNKNOWN_CLIENT_CODE_ERROR;
                         break;
                 }
+
+                TCP_Protocol.Send(stream, (byte)serverCode, serverDataJSON);
             }
         }
 
@@ -105,16 +119,16 @@ namespace TIP_Server
 
         //***** CLIENT CODES METHODS *****
 
-        private ServerCodes Disconnect(long CID, ref bool processClient) {
+        private ServerCodes DisconnectMethod(long CID, ref bool processClient) {
             processClient = false;
-            if (clients[CID].Logged) Logout(CID);
+            if (clients[CID].Logged) LogoutMethod(CID);
             clients.TryRemove(CID, out _);
             return 0;
         }
 
-        private ServerCodes Login(long CID, string dataJSON) {
+        private ServerCodes LoginMethod(long CID, string dataJSON) {
             long userID;
-            Login loginData = JsonSerializer.Deserialize<Login>(dataJSON);
+            LoginData loginData = JsonSerializer.Deserialize<LoginData>(dataJSON);
             if (!Regex.Match(loginData.Username, "^[\\w]{3,16}$").Success) return ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR;
             if (!Regex.Match(loginData.Password, "(?=.*[!\"#$%&'()*+,\\-\\./:<>=?@\\[\\]\\^_{}|~])(?=.*[A-Z])(?!.*\\$).{8,255}").Success) return ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR;
             if ((userID = DatabaseControl.CheckUserPassword(loginData.Username, loginData.Password)) < 0) return ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR;
@@ -125,7 +139,7 @@ namespace TIP_Server
             return ServerCodes.OK;
         }
 
-        private ServerCodes Logout(long CID) {
+        private ServerCodes LogoutMethod(long CID) {
             clients[CID].UserID = -1;
             clients[CID].Username = "";
             clients[CID].Logged = false;
@@ -134,9 +148,9 @@ namespace TIP_Server
             return 0;
         }
 
-        private ServerCodes Registration(long CID, string dataJSON) {
+        private ServerCodes RegistrationMethod(long CID, string dataJSON) {
             if (clients[CID].Logged) return ServerCodes.USER_LOGGED_ERROR;
-            Registration registrationData = JsonSerializer.Deserialize<Registration>(dataJSON);
+            RegistrationData registrationData = JsonSerializer.Deserialize<RegistrationData>(dataJSON);
             if (!Regex.Match(registrationData.Username, "^[\\w]{3,16}$").Success) return ServerCodes.REGISTRATION_ERROR;
             if (!Regex.Match(registrationData.Password, "(?=.*[!\"#$%&'()*+,\\-\\./:<>=?@\\[\\]\\^_{}|~])(?=.*[A-Z])(?!.*\\$).{8,255}").Success) return ServerCodes.REGISTRATION_ERROR;
             if (DatabaseControl.CheckIfUserExists(registrationData.Username)) return ServerCodes.USER_ALREADY_EXIST_ERROR;
@@ -144,10 +158,10 @@ namespace TIP_Server
             return ServerCodes.OK;
         }
 
-        private ServerCodes CreateRoom(long CID, string dataJSON) {
+        private ServerCodes CreateRoomMethod(long CID, string dataJSON) {
             long roomID;
             if (!clients[CID].Logged) return ServerCodes.USER_NOT_LOGGED_ERROR;
-            CreateRoom createRoomData = JsonSerializer.Deserialize<CreateRoom>(dataJSON);
+            CreateRoomData createRoomData = JsonSerializer.Deserialize<CreateRoomData>(dataJSON);
             if (!Regex.Match(createRoomData.Name, "^[\\S ]{3,32}$").Success) return ServerCodes.CREATE_ROOM_ERROR;
             if (createRoomData.Description.Length > 255) return ServerCodes.CREATE_ROOM_ERROR;
             if (createRoomData.UsersLimit > 8) return ServerCodes.CREATE_ROOM_ERROR;
@@ -157,9 +171,9 @@ namespace TIP_Server
             return ServerCodes.OK;
         }
 
-        private ServerCodes DeleteRoom(long CID, string dataJSON) {
+        private ServerCodes DeleteRoomMethod(long CID, string dataJSON) {
             if (!clients[CID].Logged) return ServerCodes.USER_NOT_LOGGED_ERROR;
-            DeleteRoom deleteRoomData = JsonSerializer.Deserialize<DeleteRoom>(dataJSON);
+            DeleteRoomData deleteRoomData = JsonSerializer.Deserialize<DeleteRoomData>(dataJSON);
             if (!rooms.ContainsKey(deleteRoomData.RoomID)) return ServerCodes.DELETE_ROOM_ERROR;
             if (rooms[deleteRoomData.RoomID].RoomCreatorUserID != clients[CID].UserID) return ServerCodes.DELETE_ROOM_ERROR;
             if (!DatabaseControl.DeleteRoom(deleteRoomData.RoomID)) return ServerCodes.DELETE_ROOM_ERROR;
@@ -167,9 +181,9 @@ namespace TIP_Server
             return ServerCodes.OK;
         }
 
-        private ServerCodes EnterRoom(long CID, string dataJSON) {
+        private ServerCodes EnterRoomMethod(long CID, string dataJSON) {
             if (!clients[CID].Logged) return ServerCodes.USER_NOT_LOGGED_ERROR;
-            EnterRoom enterRoomData = JsonSerializer.Deserialize<EnterRoom>(dataJSON);
+            EnterRoomData enterRoomData = JsonSerializer.Deserialize<EnterRoomData>(dataJSON);
             if (!rooms.ContainsKey(enterRoomData.RoomID)) return ServerCodes.ENTER_ROOM_ERROR;
             if (clients[CID].AudioProcessTask != null) clients[CID].AudioProcessTask.Wait();
             clients[CID].CurrentRoomID = enterRoomData.RoomID;
@@ -177,14 +191,52 @@ namespace TIP_Server
             clients[CID].AudioProcessTask = Task.Run(() => ClientAudioProcessAsync(CID));
             return ServerCodes.OK;
         }
-        private ServerCodes LeaveRoom(long CID, string dataJSON) {
+
+        private ServerCodes LeaveRoomMethod(long CID) {
             if (!clients[CID].Logged) return ServerCodes.USER_NOT_LOGGED_ERROR;
-            LeaveRoom leaveRoomData = JsonSerializer.Deserialize<LeaveRoom>(dataJSON);
-            if (!rooms.ContainsKey(leaveRoomData.RoomID)) return ServerCodes.ENTER_ROOM_ERROR;
+            if (!clients[CID].InRoom) return ServerCodes.LEAVE_ROOM_ERROR;
+            long roomID = clients[CID].CurrentRoomID;
+            if (!rooms.ContainsKey(roomID)) return ServerCodes.LEAVE_ROOM_ERROR;
             clients[CID].InRoom = false;
-            rooms[leaveRoomData.RoomID].Leave(CID);
+            rooms[roomID].Leave(CID);
             return ServerCodes.OK;
         }
 
+        private (ServerCodes serverCode, string serverDataJSON) GetRoomsMethod(long CID) {
+            if (!clients[CID].Logged) return (ServerCodes.USER_NOT_LOGGED_ERROR, "");
+            if (rooms.IsEmpty) return (ServerCodes.NO_ROOMS_ERROR, "");
+            GetRoomsData getRoomsData = new GetRoomsData {
+                Rooms = new List<GetRoomsData.RoomData>(),
+                RoomsCount = rooms.Count
+            };
+            foreach (KeyValuePair<long, Room> r in rooms) {
+                getRoomsData.Rooms.Add(new GetRoomsData.RoomData {
+                    RoomID = r.Key,
+                    RoomCreatorUserID = r.Value.RoomCreatorUserID,
+                    Name = r.Value.RoomName,
+                    Description = r.Value.Description,
+                    UsersLimit = r.Value.UsersLimit,
+                    UsersInRoomCount = r.Value.ClientsInRoomCount
+                });
+            }
+            return (ServerCodes.OK, JsonSerializer.Serialize(getRoomsData));
+        }
+
+        private (ServerCodes serverCode, string serverDataJSON) GetUsersMethod(long CID) {
+            if (!clients[CID].Logged) return (ServerCodes.USER_NOT_LOGGED_ERROR, "");
+            if (!clients[CID].InRoom) return (ServerCodes.USER_NOT_IN_ROOM_ERROR, "");
+            GetUsersData getUsersData = new GetUsersData {
+                Users = new List<GetUsersData.UserData>(),
+                UsersCount = rooms[clients[CID].CurrentRoomID].ClientsInRoomCount
+            };
+            foreach (long u in rooms[clients[CID].CurrentRoomID].ClientsInRoom) {
+                getUsersData.Users.Add(new GetUsersData.UserData {
+                    UserID = clients[u].UserID,
+                    UserName = clients[u].Username,
+                    Talking = clients[u].Talking
+                });
+            }
+            return (ServerCodes.OK, JsonSerializer.Serialize(getUsersData));
+        }
     }
 }

@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Shared.DataClasses
+namespace Shared.DataClasses.Client
 {
-    public class LeaveRoom
+    public class DeleteRoomData
     {
         public long RoomID { get; set; }
     }

@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Shared.DataClasses
+namespace Shared.DataClasses.Client
 {
-    public class CreateRoom
+    public class CreateRoomData
     {
         public string Name { get; set; }
         public string Description { get; set; }

@@ -14,7 +14,10 @@ namespace Shared
         REGISTRATION = 3,
         CREATE_ROOM = 4,
         DELETE_ROOM = 5,
-        ENTER_ROOM = 6
+        ENTER_ROOM = 6,
+        LEAVE_ROOM = 7,
+        GET_ROOMS = 8,
+        GET_USERS = 9
 
     }
 
@@ -31,6 +34,11 @@ namespace Shared
         USER_LOGGED_ERROR = 108,
         DELETE_ROOM_ERROR = 109,
         ENTER_ROOM_ERROR = 110,
+        LEAVE_ROOM_ERROR = 111,
+        NO_ROOMS_ERROR = 112,
+        GET_ROOMS_ERROR = 113,
+        USER_NOT_IN_ROOM_ERROR = 114,
+        GET_USERS_ERROR = 115,
 
         UNKNOWN_CLIENT_CODE_ERROR = 255
     }

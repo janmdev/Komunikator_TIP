@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Shared.DataClasses
+namespace Shared.DataClasses.Client
 {
-    public class Login
+    public class LoginData
     {
         public string Username { get; set; }
         public string Password { get; set; }
