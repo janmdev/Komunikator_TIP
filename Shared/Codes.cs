@@ -42,4 +42,5 @@ namespace Shared
 
         UNKNOWN_CLIENT_CODE_ERROR = 255
     }
+
 }

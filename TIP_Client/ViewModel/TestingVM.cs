@@ -6,7 +6,9 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
+using Shared;
 using TIP_Client.ViewModel.MVVM;
 
 namespace TIP_Client.ViewModel
@@ -36,7 +38,9 @@ namespace TIP_Client.ViewModel
             {
                 init();
             });
+            LogoutCommand = new Command(args => LogoutAction());
         }
+
 
         private ViewModelBase selectedVM;
         public ViewModelBase SelectedVM
@@ -52,6 +56,7 @@ namespace TIP_Client.ViewModel
             }
         }
         public ICommand RecordCommand { get; set; }
+        public ICommand LogoutCommand { get; set; }
 
         private ObservableCollection<WaveOutCapabilities> outputDeviceList;
         public ObservableCollection<WaveOutCapabilities> OutputDeviceList
@@ -134,6 +139,27 @@ namespace TIP_Client.ViewModel
             waveOut.DeviceNumber = getDeviceOut(OutputDeviceSelected);
             bwp = new BufferedWaveProvider(waveIn.WaveFormat);
             waveIn.StartRecording();
+        }
+
+        private void LogoutAction()
+        {
+            Task.Run(async () => await Client.Logout()).ContinueWith(t =>
+            {
+                
+                switch (t.Result)
+                {
+                    case 0:
+                        mainVM.NavigateTo("Login");
+                        break;
+                    case ServerCodes.USER_NOT_LOGGED_ERROR:
+                        MessageBox.Show("Użytkownik nie jest zalogowany");
+                        break;
+                    default:
+                        MessageBox.Show("Nierozpoznany błąd");
+                        break;
+                }
+                
+            });
         }
 
         private void SendCaptureSamples(object sender, WaveInEventArgs e)

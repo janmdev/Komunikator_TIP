@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Shared;
+using TIP_Client.Helpers;
 
 namespace TIP_Client
 {
@@ -14,8 +15,6 @@ namespace TIP_Client
     {
         public static TcpClient TCP { get; set; }
         private static TcpListener listener { get; set; }
-        private static string login;
-        public static string ApiKey;
 
         public static async void Send(string message)
         {
@@ -45,50 +44,40 @@ namespace TIP_Client
                 return false;
             }
         }
-        public static async Task<bool> Register(string login_, string password)
+        public static async Task<ServerCodes> Register(string login_, string password)
         {
             var code = Shared.ClientCodes.REGISTRATION;
-            var data = JsonSerializer.Serialize(new Shared.DataClasses.Registration()
+            var data = JsonSerializer.Serialize(new Shared.DataClasses.Client.RegistrationData()
             {
                 Username = login_,
                 Password = password
             });
             var length = data.Length;
             TCP_Protocol.Send(TCP.GetStream(),Convert.ToByte(code),data);
-            string result = await getUserInput(new byte[1024]);
+            (byte code_res, string data_res) = await TCP_Protocol.ReadAsync(TCP.GetStream());
 
-            if (result == "ACCOUNTCREATED")
-            {
-                //login = login_;
-                return true;
-            }
-            else return false;
+            return Tools.ServerCodesWrapper(code_res);
         }
 
-        public static async Task<bool> Login(string login_, string password)
+        public static async Task<ServerCodes> Login(string login_, string password)
         {
             var code = Shared.ClientCodes.LOGIN;
-            var data = JsonSerializer.Serialize(new Shared.DataClasses.Registration()
+            var data = JsonSerializer.Serialize(new Shared.DataClasses.Client.LoginData()
             {
                 Username = login_,
                 Password = password
             });
             var length = data.Length;
             TCP_Protocol.Send(TCP.GetStream(), Convert.ToByte(code), data);
-            string result = await getUserInput(new byte[1024]);
+            (byte code_res, string data_res) = await TCP_Protocol.ReadAsync(TCP.GetStream());
 
-            if (result == "ACCOUNTCREATED")
-            {
-                //login = login_;
-                return true;
-            }
-            else return false;
+            return Tools.ServerCodesWrapper(code_res);
         }
 
-        public static async Task<bool> CreateRoom(string name, string  desc, int roomSize)
+        public static async Task<ServerCodes> CreateRoom(string name, string  desc, int roomSize)
         {
             var code = Shared.ClientCodes.CREATE_ROOM;
-            var data = JsonSerializer.Serialize(new Shared.DataClasses.CreateRoom()
+            var data = JsonSerializer.Serialize(new Shared.DataClasses.Client.CreateRoomData()
             {
                 Name = name,
                 Description = desc,
@@ -96,92 +85,58 @@ namespace TIP_Client
             });
             var length = data.Length;
             TCP_Protocol.Send(TCP.GetStream(), Convert.ToByte(code), data);
-            string result = await getUserInput(new byte[1024]);
+            (byte code_res, string data_res) = await TCP_Protocol.ReadAsync(TCP.GetStream());
 
-            if (result == "RoomAdded")
-            {
-                //login = login_;
-                return true;
-            }
-            else return false;
+            return Tools.ServerCodesWrapper(code_res);
         }
 
-        public static async Task<bool> EnterRoom(long id)
+        public static async Task<ServerCodes> EnterRoom(long id)
         {
             var code = Shared.ClientCodes.ENTER_ROOM;
-            var data = JsonSerializer.Serialize(new Shared.DataClasses.EnterRoom()
+            var data = JsonSerializer.Serialize(new Shared.DataClasses.Client.EnterRoomData()
             {
                 RoomID = id
             });
             var length = data.Length;
             TCP_Protocol.Send(TCP.GetStream(), Convert.ToByte(code), data);
-            string result = await getUserInput(new byte[1024]);
+            (byte code_res, string data_res) = await TCP_Protocol.ReadAsync(TCP.GetStream());
 
-            if (result == "")
-            {
-                //login = login_;
-                return true;
-            }
-            else return false;
+            return Tools.ServerCodesWrapper(code_res);
         }
 
-        public static async Task<bool> LeaveRoom(long id)
+        public static async Task<ServerCodes> LeaveRoom(long id)
         {
-            var code = Shared.ClientCodes.LOGOUT;//leave
-            var data = JsonSerializer.Serialize(new Shared.DataClasses.LeaveRoom()
-            {
-                RoomID = id,
-            });
+            var code = Shared.ClientCodes.LEAVE_ROOM;
+            var data = @"";
             var length = data.Length;
             TCP_Protocol.Send(TCP.GetStream(), Convert.ToByte(code), data);
-            string result = await getUserInput(new byte[1024]);
+            (byte code_res, string data_res) = await TCP_Protocol.ReadAsync(TCP.GetStream());
 
-            if (result == "RoomAdded")
-            {
-                //login = login_;
-                return true;
-            }
-            else return false;
+            return Tools.ServerCodesWrapper(code_res);
         }
 
-        public static async Task<bool> DeleteRoom(long id)
+        public static async Task<ServerCodes> DeleteRoom(long id)
         {
             var code = Shared.ClientCodes.DELETE_ROOM;
-            var data = JsonSerializer.Serialize(new Shared.DataClasses.DeleteRoom()
+            var data = JsonSerializer.Serialize(new Shared.DataClasses.Client.DeleteRoomData()
             {
                 RoomID = id
             });
             var length = data.Length;
             TCP_Protocol.Send(TCP.GetStream(), Convert.ToByte(code), data);
-            string result = await getUserInput(new byte[1024]);
+            (byte code_res, string data_res) = await TCP_Protocol.ReadAsync(TCP.GetStream());
 
-            if (result == "Deleted")
-            {
-                //login = login_;
-                return true;
-            }
-            else return false;
+            return Tools.ServerCodesWrapper(code_res);
         }
 
-        public static async Task<bool> Logout(long id)
+        public static async Task<ServerCodes> Logout()
         {
             var code = Shared.ClientCodes.LOGOUT;
-            TCP_Protocol.Send(TCP.GetStream(), Convert.ToByte(code), null);
-            string result = await getUserInput(new byte[1024]);
+            TCP_Protocol.Send(TCP.GetStream(), Convert.ToByte(code), "");
+            (byte code_res, string data_res) = await TCP_Protocol.ReadAsync(TCP.GetStream());
 
-            if (result == "Logout")
-            {
-                //login = login_;
-                return true;
-            }
-            else return false;
+            return Tools.ServerCodesWrapper(code_res);
         }
 
-        private static async Task<string> getUserInput(byte[] buffer)
-        {
-            await TCP.GetStream().ReadAsync(buffer, 0, buffer.Length);
-            //await TCP.GetStream().ReadAsync(new byte[10]);
-            return Encoding.UTF8.GetString(buffer).Trim().Replace("\0", String.Empty);
-        }
     }
 }

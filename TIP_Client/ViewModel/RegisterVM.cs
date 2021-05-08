@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
+using Shared;
 using TIP_Client.ViewModel.MVVM;
 
 namespace TIP_Client.ViewModel
@@ -58,7 +60,22 @@ namespace TIP_Client.ViewModel
                     return;
                 }
 #endif
-                    Task.Run(async () => await Client.Register(Login, pb0.Password));
+                    Task.Run(async () => await Client.Register(Login, pb0.Password)).ContinueWith(t =>
+                    {
+                        switch (t.Result)
+                        {
+                            case ServerCodes.OK:
+                                MessageBox.Show("Konto zostało utworzone");
+                                clear(pb0,pb1);
+                                break;
+                            case ServerCodes.USER_ALREADY_EXIST_ERROR:
+                                MessageBox.Show("Użytkownik z takim loginem już istnieje");
+                                break;
+                            default:
+                                MessageBox.Show("Nierozpoznany błąd");
+                                break;
+                        }
+                    });
                 }
             }
             
@@ -66,6 +83,16 @@ namespace TIP_Client.ViewModel
         }
         public ICommand BackCommand { get; set; }
 
+        private void clear(PasswordBox pb, PasswordBox pbConfirm)
+        {
+            Login = "";
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                pb.Password = "";
+                pbConfirm.Password = "";
+            });
+            
+        }
         public void GoBack()
         {
             mainVM.NavigateTo("Login");

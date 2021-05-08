@@ -1,5 +1,9 @@
 ﻿using System;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using Shared;
 
 namespace TIP_Client.ViewModel
 {
@@ -34,17 +38,32 @@ namespace TIP_Client.ViewModel
         public ICommand LoginCommand { get; set; }
         private void LoginF(object args)
         {
-            if (LoginValidated())
+            if (args is PasswordBox pb)
             {
-                mainVM.NavigateTo("Testing");
+                Task.Run(async () => await Client.Login(Login, pb.Password)).ContinueWith((t) =>
+                {
+                    switch (t.Result)
+                    {
+                        case ServerCodes.OK:
+                            mainVM.NavigateTo("Testing");
+                            break;
+                        case ServerCodes.USER_ALREADY_LOGGED_ERROR:
+                            MessageBox.Show("Użytkownik już jest zalogowany");
+                            break;
+                        case ServerCodes.USER_LOGGED_ERROR:
+                            MessageBox.Show("Użytkownik już jest zalogowany");
+                            break;
+                        case ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR:
+                            MessageBox.Show("Błędne dane logowani");
+                            break;
+                        default:
+                            MessageBox.Show("Nierozpoznany błąd");
+                            break;
+                    }
+                });
             }
         }
 
-        private bool LoginValidated()
-        {
-            //NOT IMPLEMENTED
-            return true;
-        }
 
         public ICommand RegisterCommand { get; set; }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Shared
 {
@@ -54,6 +55,39 @@ namespace Shared
             int dataBytesLeft = dataSize;
 
             while (dataBytesLeft > 0) {
+                int dataBytesRead = stream.Read(dataBuffer, 0, dataBufferSize);
+                char[] chars = new char[decoder.GetCharCount(dataBuffer, 0, dataBytesRead)];
+                decoder.GetChars(dataBuffer, 0, dataBytesRead, chars, 0);
+                dataJSON += new string(chars);
+                dataBytesLeft -= dataBytesRead;
+            }
+
+            return (code, dataJSON);
+        }
+
+        public static async Task<(byte code, string dataJSON)> ReadAsync(NetworkStream stream)
+        {
+            byte[] codeBuffer = new byte[dataSizeBufferSize];
+            byte[] dataSizeBuffer = new byte[dataSizeBufferSize];
+            byte[] dataBuffer = new byte[dataBufferSize];
+
+            Decoder decoder = Encoding.ASCII.GetDecoder();
+
+            ushort dataSize;
+            byte code;
+            string dataJSON = "";
+
+
+            await stream.ReadAsync(codeBuffer, 0, codeBufferSize);
+            await stream.ReadAsync(dataSizeBuffer, 0, dataSizeBufferSize);
+
+            code = codeBuffer[0];
+            dataSize = BitConverter.ToUInt16(dataSizeBuffer, 0);
+
+            int dataBytesLeft = dataSize;
+
+            while (dataBytesLeft > 0)
+            {
                 int dataBytesRead = stream.Read(dataBuffer, 0, dataBufferSize);
                 char[] chars = new char[decoder.GetCharCount(dataBuffer, 0, dataBytesRead)];
                 decoder.GetChars(dataBuffer, 0, dataBytesRead, chars, 0);
