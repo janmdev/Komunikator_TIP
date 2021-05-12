@@ -133,7 +133,7 @@ namespace TIP_Server
                     cmd.CommandText = "SELECT room_id, room_creator, room_name, description, users_limit FROM rooms";
                     using (MySqlDataReader reader = cmd.ExecuteReader()) {
                         while (reader.Read()) {
-                            rooms.TryAdd((long)reader["room_id"], new Room((long)reader["room_creator"], (string)reader["room_name"], (byte)reader["users_limit"], (string)reader["description"]));
+                            rooms.TryAdd((long)reader["room_id"], new Room((long)reader["room_creator"], (string)reader["room_name"], Convert.ToByte((sbyte)reader["users_limit"]), (string)reader["description"]));
                         }
                     }
                 }

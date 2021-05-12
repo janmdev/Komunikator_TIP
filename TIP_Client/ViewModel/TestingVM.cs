@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using Shared;
+using Shared.DataClasses.Server;
 using TIP_Client.ViewModel.MVVM;
 
 namespace TIP_Client.ViewModel
@@ -20,6 +21,8 @@ namespace TIP_Client.ViewModel
         private WaveOut waveOut;
         public TestingVM(MainVM mainVM)
         {
+            Rooms = new ObservableCollection<GetRoomsData.RoomData>();
+            UsersInRoom = new ObservableCollection<GetUsersData.UserData>();
             this.mainVM = mainVM;
             OutputDeviceList = new ObservableCollection<WaveOutCapabilities>();
             int waveOutDevices = WaveOut.DeviceCount;
@@ -39,8 +42,156 @@ namespace TIP_Client.ViewModel
                 init();
             });
             LogoutCommand = new Command(args => LogoutAction());
+            
+            Task.Run(async () => await Client.GetRooms()).ContinueWith(t =>
+            {
+                switch (t.Result.Item1)
+                {
+                    case ServerCodes.OK:
+                        Rooms = new ObservableCollection<GetRoomsData.RoomData>(t.Result.Item2.Rooms);
+                        break;
+                    case ServerCodes.GET_ROOMS_ERROR:
+                        MessageBox.Show("Nie można pobrać pokojów");
+                        break;
+                    case ServerCodes.NO_ROOMS_ERROR:
+                        MessageBox.Show("Brak pokojów");
+                        break;
+                    default:
+                        MessageBox.Show("Nie można pobrać pokojów");
+                        break;
+                }
+            });
+            NewRoomCommand = new Command(args => NewRoomAction());
+            EnterRoomCommand = new Command(args => EnterRoomAction());
+            LeaveRoomCommand = new Command(async args => await LeaveRoomAction());
         }
 
+        private async Task LeaveRoomAction()
+        {
+            var code_resp = await Client.LeaveRoom();
+            switch (code_resp)
+            {
+                case ServerCodes.OK:
+                    InRoom = false;
+                    currentRoomId = 0;
+                    UsersInRoom = new ObservableCollection<GetUsersData.UserData>();
+                    break;
+                default:
+                    MessageBox.Show("TODO " + code_resp.ToString());
+                    break;
+            }
+        }
+
+        private bool inRoom;
+
+        public bool InRoom
+        {
+            get
+            {
+                return inRoom;
+            }
+            set
+            {
+                inRoom = value;
+                OnPropertyChanged(nameof(InRoom));
+            }
+        }
+
+        private long currentRoomId;
+        private async void EnterRoomAction()
+        {
+            if (InRoom && SelectedRoom.RoomID != currentRoomId)
+            {
+                await LeaveRoomAction();
+            }
+
+            if (InRoom) throw new Exception("Nie udało się opuścić pokoju");
+            var code_resp = await Client.EnterRoom(SelectedRoom.RoomID);
+            switch (code_resp)
+            {
+                case ServerCodes.OK:
+                    FillUsers();
+                    InRoom = true;
+                    currentRoomId = SelectedRoom.RoomID;
+                    break;
+                default:
+                    MessageBox.Show("TODO " + code_resp.ToString());
+                    break;
+            }
+        }
+
+        private async void FillUsers()
+        {
+            var users = await Client.GetUsers();
+            switch (users.Item1)
+            {
+                case ServerCodes.OK:
+                    UsersInRoom = new ObservableCollection<GetUsersData.UserData>(users.Item2.Users);
+                    break;
+                default:
+                    MessageBox.Show("TODO " + users.Item1.ToString());
+                    break;
+            }
+        }
+
+        private async void NewRoomAction()
+        {
+            var code_resp = await Client.CreateRoom(NewRoomName, "", NewRoomLimit);
+            switch (code_resp)
+            {
+                case ServerCodes.OK:
+                    NewRoomName = "";
+                    NewRoomLimit = 0;
+                    break;
+                default:
+                    MessageBox.Show("TODO " + code_resp.ToString());
+                    break;
+            }
+        }
+
+        private GetRoomsData.RoomData selectedRoom;
+
+        public GetRoomsData.RoomData SelectedRoom
+        {
+            get
+            {
+                return selectedRoom;
+            }
+            set
+            {
+                selectedRoom = value;
+                OnPropertyChanged(nameof(SelectedRoom));
+            }
+        }
+
+        private ObservableCollection<GetUsersData.UserData> usersInRoom;
+
+        public ObservableCollection<GetUsersData.UserData> UsersInRoom
+        {
+            get
+            {
+                return usersInRoom;
+            }
+            set
+            {
+                usersInRoom = value;
+                OnPropertyChanged(nameof(UsersInRoom));
+            }
+        }
+
+        private ObservableCollection<GetRoomsData.RoomData> rooms;
+        public ObservableCollection<GetRoomsData.RoomData> Rooms {
+            get
+            {
+                return rooms;
+            }
+            set
+            {
+                rooms = value;
+                OnPropertyChanged(nameof(Rooms));
+            }
+
+        }
 
         private ViewModelBase selectedVM;
         public ViewModelBase SelectedVM
@@ -57,6 +208,38 @@ namespace TIP_Client.ViewModel
         }
         public ICommand RecordCommand { get; set; }
         public ICommand LogoutCommand { get; set; }
+        public ICommand NewRoomCommand { get; set; }
+        public ICommand EnterRoomCommand { get; set; }
+        public ICommand LeaveRoomCommand { get; set; }
+
+        private string newRoomName;
+        public string NewRoomName
+        {
+            get
+            {
+                return newRoomName;
+            }
+            set
+            {
+                newRoomName = value;
+                OnPropertyChanged(nameof(NewRoomName));
+            }
+        }
+
+        private int newRoomLimit;
+
+        public int NewRoomLimit
+        {
+            get
+            {
+                return newRoomLimit;
+            }
+            set
+            {
+                newRoomLimit = value;
+                OnPropertyChanged(nameof(NewRoomName));
+            }
+        }
 
         private ObservableCollection<WaveOutCapabilities> outputDeviceList;
         public ObservableCollection<WaveOutCapabilities> OutputDeviceList
@@ -165,6 +348,7 @@ namespace TIP_Client.ViewModel
         private void SendCaptureSamples(object sender, WaveInEventArgs e)
         {
             byte[] bytes = new byte[1024];
+            bwp.ClearBuffer();
             bwp.AddSamples(e.Buffer, 0, e.BytesRecorded);
             //TAK NIE MOZE BYĆ JAK COŚ BO PAMIĘĆ ŻRE
             waveOut.Init(bwp);

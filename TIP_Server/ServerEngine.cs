@@ -129,8 +129,11 @@ namespace TIP_Server
         private ServerCodes LoginMethod(long CID, string dataJSON) {
             long userID;
             LoginData loginData = JsonSerializer.Deserialize<LoginData>(dataJSON);
+#if DEBUG
+#else
             if (!Regex.Match(loginData.Username, "^[\\w]{3,16}$").Success) return ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR;
             if (!Regex.Match(loginData.Password, "(?=.*[!\"#$%&'()*+,\\-\\./:<>=?@\\[\\]\\^_{}|~])(?=.*[A-Z])(?!.*\\$).{8,255}").Success) return ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR;
+#endif
             if ((userID = DatabaseControl.CheckUserPassword(loginData.Username, loginData.Password)) < 0) return ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR;
             if (clients[CID].Logged) return ServerCodes.USER_ALREADY_LOGGED_ERROR;
             clients[CID].UserID = userID;
@@ -151,8 +154,11 @@ namespace TIP_Server
         private ServerCodes RegistrationMethod(long CID, string dataJSON) {
             if (clients[CID].Logged) return ServerCodes.USER_LOGGED_ERROR;
             RegistrationData registrationData = JsonSerializer.Deserialize<RegistrationData>(dataJSON);
+#if DEBUG
+#else
             if (!Regex.Match(registrationData.Username, "^[\\w]{3,16}$").Success) return ServerCodes.REGISTRATION_ERROR;
             if (!Regex.Match(registrationData.Password, "(?=.*[!\"#$%&'()*+,\\-\\./:<>=?@\\[\\]\\^_{}|~])(?=.*[A-Z])(?!.*\\$).{8,255}").Success) return ServerCodes.REGISTRATION_ERROR;
+#endif
             if (DatabaseControl.CheckIfUserExists(registrationData.Username)) return ServerCodes.USER_ALREADY_EXIST_ERROR;
             if (DatabaseControl.AddNewUser(registrationData.Username, registrationData.Password) < 0) return ServerCodes.REGISTRATION_ERROR;
             return ServerCodes.OK;

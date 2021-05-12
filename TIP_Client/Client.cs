@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Shared;
+using Shared.DataClasses.Server;
 using TIP_Client.Helpers;
 
 namespace TIP_Client
@@ -104,7 +105,7 @@ namespace TIP_Client
             return Tools.ServerCodesWrapper(code_res);
         }
 
-        public static async Task<ServerCodes> LeaveRoom(long id)
+        public static async Task<ServerCodes> LeaveRoom()
         {
             var code = Shared.ClientCodes.LEAVE_ROOM;
             var data = @"";
@@ -136,6 +137,34 @@ namespace TIP_Client
             (byte code_res, string data_res) = await TCP_Protocol.ReadAsync(TCP.GetStream());
 
             return Tools.ServerCodesWrapper(code_res);
+        }
+
+        public static async Task<(ServerCodes,GetRoomsData)> GetRooms()
+        {
+            var code = Shared.ClientCodes.GET_ROOMS;
+            TCP_Protocol.Send(TCP.GetStream(),Convert.ToByte(code),"");
+            (byte code_res, string data_res) = await TCP_Protocol.ReadAsync(TCP.GetStream());
+            GetRoomsData roomsData = null;
+            try
+            {
+                roomsData = JsonSerializer.Deserialize<GetRoomsData>(data_res);
+            }
+            catch(Exception) {}
+            return (Tools.ServerCodesWrapper(code_res), roomsData);
+        }
+
+        public static async Task<(ServerCodes, GetUsersData)> GetUsers()
+        {
+            var code = Shared.ClientCodes.GET_USERS;
+            TCP_Protocol.Send(TCP.GetStream(), Convert.ToByte(code), "");
+            (byte code_res, string data_res) = await TCP_Protocol.ReadAsync(TCP.GetStream());
+            GetUsersData usersData = null;
+            try
+            {
+                usersData = JsonSerializer.Deserialize<GetUsersData>(data_res);
+            }
+            catch (Exception) { }
+            return (Tools.ServerCodesWrapper(code_res), usersData);
         }
 
     }
