@@ -8,7 +8,8 @@ namespace TIP_Server
 {
     public static class DatabaseControl
     {
-        private const string IPAddr = "192.168.1.250"; //localhost in final version
+        //private const string IPAddr = "192.168.1.250"; //localhost in final version
+        private const string IPAddr = "localhost";
         private const string user = "projekt_tip_user";
         private const string password = "hSrZzp@x4g<!FY!F";
         private const string databaseName = "projekt_tip";
@@ -22,7 +23,7 @@ namespace TIP_Server
                     conn.Open();
                     cmd.CommandText = "SELECT COUNT(user_id) FROM users WHERE user_name = @u";
                     cmd.Parameters.AddWithValue("@u", username);
-                    result = (int)cmd.ExecuteScalar() > 0;
+                    result = (Int64)cmd.ExecuteScalar() > 0;
                 }
             }
 
@@ -63,6 +64,7 @@ namespace TIP_Server
 
             using (MySqlConnection conn = new MySqlConnection(connectionString)) {
                 using (MySqlCommand cmd = conn.CreateCommand()) {
+                    conn.Open();
                     cmd.CommandText = "SELECT user_id, password_hash FROM users WHERE user_name = @u";
                     cmd.Parameters.AddWithValue("@u", username);
                     using (MySqlDataReader reader = cmd.ExecuteReader()) {
@@ -131,7 +133,7 @@ namespace TIP_Server
                     cmd.CommandText = "SELECT room_id, room_creator, room_name, description, users_limit FROM rooms";
                     using (MySqlDataReader reader = cmd.ExecuteReader()) {
                         while (reader.Read()) {
-                            rooms.TryAdd((long)reader["room_id"], new Room((long)reader["room_creator"], (string)reader["room_name"], (byte)reader["users_limit"], (string)reader["description"]));
+                            rooms.TryAdd((long)reader["room_id"], new Room((long)reader["room_creator"], (string)reader["room_name"], Convert.ToByte((sbyte)reader["users_limit"]), (string)reader["description"]));
                         }
                     }
                 }

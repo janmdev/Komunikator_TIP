@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shared;
 
 namespace TIP_Client.Helpers
 {
@@ -16,6 +17,11 @@ namespace TIP_Client.Helpers
                 bytesList.AddRange(BitConverter.GetBytes(sh));
             }
             return bytesList.ToArray();
+        }
+
+        public static ServerCodes ServerCodesWrapper(byte data)
+        {
+            return (ServerCodes)Convert.ToInt32(data);
         }
     }
 }
