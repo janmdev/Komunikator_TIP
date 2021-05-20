@@ -108,6 +108,7 @@ namespace TIP_Server
 
             while (clients[CID].InRoom) {
                 if (recivedAudio.ContainsKey(clientEndPointString) && !recivedAudio[clientEndPointString].IsEmpty) {
+                    clients[CID].Talking = true;
                     recivedAudio[clientEndPointString].TryDequeue(out byte[] audioBytes);
                     foreach (long clientInRoom in rooms[clients[CID].CurrentRoomID].ClientsInRoom) {
                         if (clientInRoom == CID) continue;
@@ -115,6 +116,14 @@ namespace TIP_Server
                     }
                 }
             }
+        }
+
+        private void ClientTalkingInformationAsync(long CID) {
+            while (clients[CID].InRoom) {
+                if (clients[CID].TalkingTimer > 0) clients[CID].TalkingTimer--;
+                Task.Delay(100);
+            }
+
         }
 
         //***** CLIENT CODES METHODS *****
@@ -189,6 +198,7 @@ namespace TIP_Server
             clients[CID].CurrentRoomID = enterRoomData.RoomID;
             rooms[enterRoomData.RoomID].ClientsInRoom.Add(CID);
             clients[CID].AudioProcessTask = Task.Run(() => ClientAudioProcessAsync(CID));
+            clients[CID].TalkingInformationTask = Task.Run(() => ClientTalkingInformationAsync(CID));
             return ServerCodes.OK;
         }
 
@@ -197,6 +207,7 @@ namespace TIP_Server
             if (!clients[CID].InRoom) return ServerCodes.LEAVE_ROOM_ERROR;
             long roomID = clients[CID].CurrentRoomID;
             if (!rooms.ContainsKey(roomID)) return ServerCodes.LEAVE_ROOM_ERROR;
+            clients[CID].Talking = false;
             clients[CID].InRoom = false;
             rooms[roomID].Leave(CID);
             return ServerCodes.OK;
