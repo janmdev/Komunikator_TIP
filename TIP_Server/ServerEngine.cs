@@ -225,7 +225,7 @@ namespace TIP_Server
                     UsersInRoomCount = r.Value.ClientsInRoomCount
                 });
             }
-            return (ServerCodes.OK, JsonSerializer.Serialize(getRoomsData));
+            return (ServerCodes.OK_ROOMS, JsonSerializer.Serialize(getRoomsData));
         }
 
         private (ServerCodes serverCode, string serverDataJSON) GetUsersMethod(long CID) {
@@ -242,7 +242,7 @@ namespace TIP_Server
                     Talking = clients[u].Talking
                 });
             }
-            return (ServerCodes.OK, JsonSerializer.Serialize(getUsersData));
+            return (ServerCodes.OK_USERS, JsonSerializer.Serialize(getUsersData));
         }
     }
 }

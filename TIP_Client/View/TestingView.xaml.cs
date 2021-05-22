@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -14,6 +15,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Shared.DataClasses.Server;
 using TIP_Client.ViewModel;
 using Path = System.IO.Path;
 using UserControl = System.Windows.Controls.UserControl;
@@ -28,7 +30,6 @@ namespace TIP_Client.View
         public TestingView()
         {
             InitializeComponent();
-            
         }
 
         

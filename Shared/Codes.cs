@@ -39,7 +39,8 @@ namespace Shared
         GET_ROOMS_ERROR = 113,
         USER_NOT_IN_ROOM_ERROR = 114,
         GET_USERS_ERROR = 115,
-
+        OK_USERS = 120,
+        OK_ROOMS = 121,
         UNKNOWN_CLIENT_CODE_ERROR = 255
     }
 

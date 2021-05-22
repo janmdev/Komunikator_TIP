@@ -1,26 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Shared;
-using Shared.DataClasses.Server;
-using TIP_Client.Helpers;
+﻿using System.Windows.Documents;
 
 namespace TIP_Client
 {
+    using Shared;
+    using Shared.DataClasses.Server;
+    using System;
+    using System.Net;
+    using System.Net.Sockets;
+    using System.Text;
+    using System.Text.Json;
+    using System.Threading.Tasks;
+    using TIP_Client.Helpers;
+
     public static class Client
     {
         public static TcpClient TCP { get; set; }
-        private static TcpListener listener { get; set; }
 
-        public static async void Send(string message)
-        {
-            await TCP.GetStream().WriteAsync(Encoding.UTF8.GetBytes(message));
-        }
+        private static TcpListener listener { get; set; }
 
         public static async Task<bool> Connect(string ipAddress, int port)
         {
@@ -45,6 +41,8 @@ namespace TIP_Client
                 return false;
             }
         }
+
+
         public static async Task<ServerCodes> Register(string login_, string password)
         {
             var code = Shared.ClientCodes.REGISTRATION;
@@ -54,7 +52,7 @@ namespace TIP_Client
                 Password = password
             });
             var length = data.Length;
-            TCP_Protocol.Send(TCP.GetStream(),Convert.ToByte(code),data);
+            TCP_Protocol.Send(TCP.GetStream(), Convert.ToByte(code), data);
             (byte code_res, string data_res) = await TCP_Protocol.ReadAsync(TCP.GetStream());
 
             return Tools.ServerCodesWrapper(code_res);
@@ -75,7 +73,7 @@ namespace TIP_Client
             return Tools.ServerCodesWrapper(code_res);
         }
 
-        public static async Task<ServerCodes> CreateRoom(string name, string  desc, int roomSize)
+        public static async Task<ServerCodes> CreateRoom(string name, string desc, int roomSize)
         {
             var code = Shared.ClientCodes.CREATE_ROOM;
             var data = JsonSerializer.Serialize(new Shared.DataClasses.Client.CreateRoomData()
@@ -100,20 +98,19 @@ namespace TIP_Client
             });
             var length = data.Length;
             TCP_Protocol.Send(TCP.GetStream(), Convert.ToByte(code), data);
-            (byte code_res, string data_res) = await TCP_Protocol.ReadAsync(TCP.GetStream());
+            (byte codeRes, _) = await TCP_Protocol.ReadAsync(TCP.GetStream());
 
-            return Tools.ServerCodesWrapper(code_res);
+            return Tools.ServerCodesWrapper(codeRes);
         }
 
         public static async Task<ServerCodes> LeaveRoom()
         {
-            var code = Shared.ClientCodes.LEAVE_ROOM;
+            var code = ClientCodes.LEAVE_ROOM;
             var data = @"";
-            var length = data.Length;
             TCP_Protocol.Send(TCP.GetStream(), Convert.ToByte(code), data);
-            (byte code_res, string data_res) = await TCP_Protocol.ReadAsync(TCP.GetStream());
+            (byte codeRes, string dataRes) = await TCP_Protocol.ReadAsync(TCP.GetStream());
 
-            return Tools.ServerCodesWrapper(code_res);
+            return Tools.ServerCodesWrapper(codeRes);
         }
 
         public static async Task<ServerCodes> DeleteRoom(long id)
@@ -139,33 +136,22 @@ namespace TIP_Client
             return Tools.ServerCodesWrapper(code_res);
         }
 
-        public static async Task<(ServerCodes,GetRoomsData)> GetRooms()
+        public static async Task<(ServerCodes, string)> GetRooms()
         {
             var code = Shared.ClientCodes.GET_ROOMS;
-            TCP_Protocol.Send(TCP.GetStream(),Convert.ToByte(code),"");
+            TCP_Protocol.Send(TCP.GetStream(), Convert.ToByte(code), "");
             (byte code_res, string data_res) = await TCP_Protocol.ReadAsync(TCP.GetStream());
-            GetRoomsData roomsData = null;
-            try
-            {
-                roomsData = JsonSerializer.Deserialize<GetRoomsData>(data_res);
-            }
-            catch(Exception) {}
-            return (Tools.ServerCodesWrapper(code_res), roomsData);
+
+            return (Tools.ServerCodesWrapper(code_res), data_res);
         }
 
-        public static async Task<(ServerCodes, GetUsersData)> GetUsers()
+        public static async Task<(ServerCodes, string)> GetUsers()
         {
             var code = Shared.ClientCodes.GET_USERS;
             TCP_Protocol.Send(TCP.GetStream(), Convert.ToByte(code), "");
             (byte code_res, string data_res) = await TCP_Protocol.ReadAsync(TCP.GetStream());
-            GetUsersData usersData = null;
-            try
-            {
-                usersData = JsonSerializer.Deserialize<GetUsersData>(data_res);
-            }
-            catch (Exception) { }
-            return (Tools.ServerCodesWrapper(code_res), usersData);
-        }
 
+            return (Tools.ServerCodesWrapper(code_res), data_res);
+        }
     }
 }

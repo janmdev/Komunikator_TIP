@@ -5,9 +5,12 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.TextFormatting;
 using Shared;
 using Shared.DataClasses.Server;
 using TIP_Client.ViewModel.MVVM;
@@ -23,7 +26,8 @@ namespace TIP_Client.ViewModel
         {
             Rooms = new ObservableCollection<GetRoomsData.RoomData>();
             UsersInRoom = new ObservableCollection<GetUsersData.UserData>();
-            this.mainVM = mainVM;
+            DeleteRoomCommand = new Command(args => DeleteRoomAction());
+            
             OutputDeviceList = new ObservableCollection<WaveOutCapabilities>();
             int waveOutDevices = WaveOut.DeviceCount;
             for (int waveOutDevice = 0; waveOutDevice < waveOutDevices; waveOutDevice++)
@@ -42,28 +46,74 @@ namespace TIP_Client.ViewModel
                 init();
             });
             LogoutCommand = new Command(args => LogoutAction());
-            
-            Task.Run(async () => await Client.GetRooms()).ContinueWith(t =>
+
+            getRoomsTask = new Task(async () =>
             {
-                switch (t.Result.Item1)
+                while (true)
                 {
-                    case ServerCodes.OK:
-                        Rooms = new ObservableCollection<GetRoomsData.RoomData>(t.Result.Item2.Rooms);
-                        break;
-                    case ServerCodes.GET_ROOMS_ERROR:
-                        MessageBox.Show("Nie można pobrać pokojów");
-                        break;
-                    case ServerCodes.NO_ROOMS_ERROR:
-                        MessageBox.Show("Brak pokojów");
-                        break;
-                    default:
-                        MessageBox.Show("Nie można pobrać pokojów");
-                        break;
+                    var rooms = await Client.GetRooms();
+                    fillRoomsUsers(rooms);
+                    await Task.Delay(300);
                 }
             });
+            getRoomsTask.Start();
+            getUsersTask = new Task(async () =>
+            {
+                while (true)
+                {
+                    if(inRoom)
+                    {
+                        var users = await Client.GetUsers();
+                        fillRoomsUsers(users);
+                    }
+                    await Task.Delay(300);
+                }
+            });
+            getUsersTask.Start();
             NewRoomCommand = new Command(args => NewRoomAction());
             EnterRoomCommand = new Command(args => EnterRoomAction());
             LeaveRoomCommand = new Command(async args => await LeaveRoomAction());
+            this.mainVM = mainVM;
+        }
+
+        private Task getRoomsTask;
+        private Task getUsersTask;
+        private void fillRoomsUsers((ServerCodes, string) codeData)
+        {
+            if (codeData.Item1 == ServerCodes.OK_USERS)
+            {
+                var userData = JsonSerializer.Deserialize<GetUsersData>(codeData.Item2).Users;
+                if (!userData.Select(p => p.UserID).SequenceEqual(usersInRoom.Select(p => p.UserID)))
+                {
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        UsersInRoom.Clear();
+                        userData.ForEach(p => UsersInRoom.Add(p));
+                    });
+                }
+            }
+
+            if (codeData.Item1 == ServerCodes.OK_ROOMS)
+            {
+                var roomData = JsonSerializer.Deserialize<GetRoomsData>(codeData.Item2).Rooms;
+                if (!roomData.Select(p => p.Name).SequenceEqual(rooms.Select(p => p.Name)))
+                {
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        Rooms.Clear();
+                        roomData.ForEach(p => Rooms.Add(p));
+                    });
+                }
+            }
+        }
+        private void fillRooms((ServerCodes,GetRoomsData) codeRooms)
+        {
+            
+        }
+
+        private async void DeleteRoomAction()
+        {
+            var codeResp = await Client.DeleteRoom(SelectedRoom.RoomID);
         }
 
         private async Task LeaveRoomAction()
@@ -74,7 +124,7 @@ namespace TIP_Client.ViewModel
                 case ServerCodes.OK:
                     InRoom = false;
                     currentRoomId = 0;
-                    UsersInRoom = new ObservableCollection<GetUsersData.UserData>();
+                    UsersInRoom.Clear();
                     break;
                 default:
                     MessageBox.Show("TODO " + code_resp.ToString());
@@ -110,7 +160,7 @@ namespace TIP_Client.ViewModel
             switch (code_resp)
             {
                 case ServerCodes.OK:
-                    FillUsers();
+                    //FillUsers();
                     InRoom = true;
                     currentRoomId = SelectedRoom.RoomID;
                     break;
@@ -120,19 +170,21 @@ namespace TIP_Client.ViewModel
             }
         }
 
-        private async void FillUsers()
-        {
-            var users = await Client.GetUsers();
-            switch (users.Item1)
-            {
-                case ServerCodes.OK:
-                    UsersInRoom = new ObservableCollection<GetUsersData.UserData>(users.Item2.Users);
-                    break;
-                default:
-                    MessageBox.Show("TODO " + users.Item1.ToString());
-                    break;
-            }
-        }
+        //private async void FillUsers()
+        //{
+        //    var users = await Client.GetUsers();
+        //    switch (users.Item1)
+        //    {
+        //        case ServerCodes.OK:
+        //            UsersInRoom.Clear();
+        //            users.Item2.Users.ForEach(p => UsersInRoom.Add(p));
+        //            //UsersInRoom = new ObservableCollection<GetUsersData.UserData>(users.Item2.Users);
+        //            break;
+        //        default:
+        //            MessageBox.Show("TODO " + users.Item1.ToString());
+        //            break;
+        //    }
+        //}
 
         private async void NewRoomAction()
         {
@@ -211,6 +263,7 @@ namespace TIP_Client.ViewModel
         public ICommand NewRoomCommand { get; set; }
         public ICommand EnterRoomCommand { get; set; }
         public ICommand LeaveRoomCommand { get; set; }
+        public ICommand DeleteRoomCommand { get; set; }
 
         private string newRoomName;
         public string NewRoomName
@@ -332,6 +385,8 @@ namespace TIP_Client.ViewModel
                 switch (t.Result)
                 {
                     case 0:
+                        getRoomsTask.Dispose();
+                        getUsersTask.Dispose();
                         mainVM.NavigateTo("Login");
                         break;
                     case ServerCodes.USER_NOT_LOGGED_ERROR:

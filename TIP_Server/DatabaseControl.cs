@@ -115,7 +115,7 @@ namespace TIP_Server
             using (MySqlConnection conn = new MySqlConnection(connectionString)) {
                 using (MySqlCommand cmd = conn.CreateCommand()) {
                     conn.Open();
-                    cmd.CommandText = "DELETE FROM rooms WHERE roomID = @r";
+                    cmd.CommandText = "DELETE FROM rooms WHERE room_ID = @r";
                     cmd.Parameters.AddWithValue("@r", roomID);
                     cmd.ExecuteNonQuery();
                     result = true;
