@@ -60,9 +60,9 @@ namespace TIP_Client.ViewModel
                     return;
                 }
 #endif
-                    Task.Run(async () => await Client.Register(Login, pb0.Password)).ContinueWith(t =>
+                    Task.Run(() => Client.Register(Login, pb0.Password)).ContinueWith(t =>
                     {
-                        switch (t.Result)
+                        switch (t.Result.Item1)
                         {
                             case ServerCodes.OK:
                                 MessageBox.Show("Konto zostało utworzone");

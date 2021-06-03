@@ -40,9 +40,9 @@ namespace TIP_Client.ViewModel
         {
             if (args is PasswordBox pb)
             {
-                Task.Run(async () => await Client.Login(Login, pb.Password)).ContinueWith((t) =>
+                Task.Run(() => Client.Login(Login, pb.Password)).ContinueWith((t) =>
                 {
-                    switch (t.Result)
+                    switch (t.Result.Item1)
                     {
                         case ServerCodes.OK:
                             mainVM.NavigateTo("Testing");

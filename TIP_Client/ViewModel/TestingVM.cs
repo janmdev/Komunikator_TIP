@@ -31,13 +31,13 @@ namespace TIP_Client.ViewModel
         {
             bwp = new BufferedWaveProvider(new WaveFormat(44100, 2));
             loggedIn = true;
-            
+
             waveIn = new WaveInEvent();
             waveIn.WaveFormat = new WaveFormat(44100, 2);
             waveIn.DeviceNumber = getDeviceIn(InputDeviceSelected);
-            waveIn.BufferMilliseconds = 30;
+            waveIn.BufferMilliseconds = 50;
             waveIn.DataAvailable += new EventHandler<WaveInEventArgs>(SendG722);
-            
+
             udpClient = new UdpClient();
             udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, 41234));
             Rooms = new ObservableCollection<GetRoomsData.RoomData>();
@@ -66,11 +66,11 @@ namespace TIP_Client.ViewModel
             {
                 while (loggedIn)
                 {
-                    var rooms = await Client.GetRooms();
+                    var rooms = Client.GetRooms();
                     fillRoomsUsers(rooms);
                     if (inRoom)
                     {
-                        var users = await Client.GetUsers();
+                        var users =  Client.GetUsers();
                         fillRoomsUsers(users);
                     }
                     await Task.Delay(200);
@@ -83,8 +83,7 @@ namespace TIP_Client.ViewModel
                 {
                     if (inRoom)
                     {
-                        var data = await udpClient.ReceiveAsync();
-                        playAudio(data.Buffer);
+                        playAudio((await udpClient.ReceiveAsync()).Buffer);
                     }
                 }
             });
@@ -94,7 +93,7 @@ namespace TIP_Client.ViewModel
             {
                 EnterRoomAction();
             });
-            LeaveRoomCommand = new Command(async args => await Client.LeaveRoom());
+            LeaveRoomCommand = new Command(args => Client.LeaveRoom());
             this.mainVM = mainVM;
         }
 
@@ -153,25 +152,24 @@ namespace TIP_Client.ViewModel
             waveOut.Stop();
             bwp.ClearBuffer();
             bwp.AddSamples(decoded, 0, decoded.Length);
-            waveOut.DeviceNumber = getDeviceOut(OutputDeviceSelected);
             waveOut.Play();
         }
 
         private async void SendG722(object sender, WaveInEventArgs e)
         {
             var encoded = AudioHelper.EncodeG722(e.Buffer, 48000);
-            await udpClient.SendAsync(encoded, encoded.Length, new IPEndPoint(IPAddress.Parse(Client.connection.IPAddr),Client.connection.Port));
+            await udpClient.SendAsync(encoded, encoded.Length, new IPEndPoint(IPAddress.Parse(Client.connection.IPAddr), Client.connection.Port));
         }
 
         private async void DeleteRoomAction()
         {
-            if (currentRoomId == SelectedRoom.RoomID) await LeaveRoomAction();
-            var codeResp = await Client.DeleteRoom(SelectedRoom.RoomID);
+            if (currentRoomId == SelectedRoom.RoomID) LeaveRoomAction();
+            var codeResp = Client.DeleteRoom(SelectedRoom.RoomID);
         }
 
-        private async Task LeaveRoomAction()
+        private void LeaveRoomAction()
         {
-            var resp = await Client.LeaveRoom();
+            var resp = Client.LeaveRoom();
             switch (resp.Item1)
             {
                 case ServerCodes.OK:
@@ -196,7 +194,10 @@ namespace TIP_Client.ViewModel
             set
             {
                 inRoom = value;
-                if (value) waveIn.StartRecording();
+                if (value)
+                {
+                    waveIn.StartRecording();
+                }
                 else
                 {
                     waveIn.StopRecording();
@@ -212,11 +213,11 @@ namespace TIP_Client.ViewModel
         {
             if (InRoom && SelectedRoom.RoomID != currentRoomId)
             {
-                await LeaveRoomAction();
+                LeaveRoomAction();
             }
 
             if (InRoom) throw new Exception("Nie udało się opuścić pokoju");
-            var resp = await Client.EnterRoom(SelectedRoom.RoomID);
+            var resp = Client.EnterRoom(SelectedRoom.RoomID);
             switch (resp.Item1)
             {
                 case ServerCodes.OK:
@@ -232,7 +233,7 @@ namespace TIP_Client.ViewModel
 
         private async void NewRoomAction()
         {
-            var resp = await Client.CreateRoom(NewRoomName, "", NewRoomLimit);
+            var resp = Client.CreateRoom(NewRoomName, "", NewRoomLimit);
             switch (resp.Item1)
             {
                 case ServerCodes.OK:
@@ -372,7 +373,7 @@ namespace TIP_Client.ViewModel
             set
             {
                 outputDeviceSelected = value;
-                if(waveOut != null) InitWaveOut(value);
+                if (waveOut != null) InitWaveOut(value);
 
                 OnPropertyChanged(nameof(OutputDeviceSelected));
             }
@@ -409,7 +410,8 @@ namespace TIP_Client.ViewModel
                     waveIn.StopRecording();
                     waveIn.DeviceNumber = getDeviceIn(value);
                     waveIn.StartRecording();
-                } else waveIn.DeviceNumber = getDeviceIn(value);
+                }
+                else waveIn.DeviceNumber = getDeviceIn(value);
 
 
                 OnPropertyChanged(nameof(InputDeviceSelected));
@@ -420,7 +422,7 @@ namespace TIP_Client.ViewModel
 
         private void LogoutAction()
         {
-            Task.Run(async () => await Client.Logout()).ContinueWith(t =>
+            Task.Run(() => Client.Logout()).ContinueWith(t =>
             {
 
                 switch (t.Result.Item1)
