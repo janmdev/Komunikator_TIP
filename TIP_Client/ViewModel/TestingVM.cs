@@ -160,7 +160,7 @@ namespace TIP_Client.ViewModel
         private async void SendG722(object sender, WaveInEventArgs e)
         {
             var encoded = AudioHelper.EncodeG722(e.Buffer, 48000);
-            await udpClient.SendAsync(encoded, encoded.Length, new IPEndPoint(IPAddress.Parse("127.0.0.1"), 41234));
+            await udpClient.SendAsync(encoded, encoded.Length, new IPEndPoint(IPAddress.Parse(Client.connection.IPAddr),Client.connection.Port));
         }
 
         private async void DeleteRoomAction()

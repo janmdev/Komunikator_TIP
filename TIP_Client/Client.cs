@@ -18,7 +18,7 @@ namespace TIP_Client
 
         private static TcpListener listener { get; set; }
 
-        
+        public static ConnectionModel connection;
         public static async Task<bool> Connect(string ipAddress, int port)
         {
             TCP = new TcpClient();
@@ -31,6 +31,11 @@ namespace TIP_Client
             {
                 await TCP.ConnectAsync(IPAddress.Parse(ipAddress), port);
                 listener = new TcpListener(IPAddress.Parse(ipAddress), port);
+                connection = new ConnectionModel()
+                {
+                    IPAddr = ipAddress,
+                    Port = port
+                };
                 return true;
             }
             catch (FormatException)
