@@ -37,7 +37,7 @@ namespace TIP_Client.Helpers
             var state = new G722CodecState(sampleRate, G722Flags.SampleRate8000);
 
             var wb = new WaveBuffer(data);
-            var outputBuffer = new short[data.Length * 2];
+            var outputBuffer = new short[data.Length];
             var length = codec.Decode(state, outputBuffer, data, data.Length);
 
             if (length != outputBuffer.Length)

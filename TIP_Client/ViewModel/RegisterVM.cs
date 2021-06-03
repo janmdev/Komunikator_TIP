@@ -53,7 +53,7 @@ namespace TIP_Client.ViewModel
 #if DEBUG
 
 #else
-                if (!Regex.Match(pbArr[0].Password,
+                if (!Regex.Match(pb1.Password,
                     "(?=.*[!\"#$%&'()*+,\\-\\./:<>=?@\\[\\]\\^_{}|~])(?=.*[A-Z])(?!.*\\$).{8,255}").Success)
                 {
                     MessageBox.Show("Hasło nie spełnia warunków");
