@@ -97,6 +97,9 @@ namespace TIP_Server
             while (runServer) {
                 IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Any, 0);
                 byte[] audioBytes = udpAudioListener.Receive(ref clientEndPoint);
+                if (!recivedAudio.ContainsKey(clientEndPoint.ToString()) || (recivedAudio[clientEndPoint.ToString()] == null)) {
+                    recivedAudio[clientEndPoint.ToString()] = new ConcurrentQueue<byte[]>();
+                }
                 recivedAudio[clientEndPoint.ToString()].Enqueue(audioBytes);
             }
         }
@@ -181,7 +184,9 @@ namespace TIP_Server
             if (createRoomData.Description.Length > 255) return ServerCodes.CREATE_ROOM_ERROR;
             if (createRoomData.UsersLimit > 8) return ServerCodes.CREATE_ROOM_ERROR;
             if (DatabaseControl.CheckIfUserExists(createRoomData.Name)) return ServerCodes.ROOM_ALREDY_EXIST_ERROR;
-            if ((roomID = DatabaseControl.AddNewRoom(clients[CID].UserID, createRoomData.Name, createRoomData.UsersLimit, createRoomData.Description)) < 0) return ServerCodes.CREATE_ROOM_ERROR;
+            if ((roomID = DatabaseControl.AddNewRoom(clients[CID].UserID, createRoomData.Name, createRoomData.UsersLimit, createRoomData.Description)) < 0) {
+                return ServerCodes.CREATE_ROOM_ERROR;
+            }
             rooms.TryAdd(roomID, new Room(clients[CID].UserID, createRoomData.Name, createRoomData.UsersLimit, createRoomData.Description));
             return ServerCodes.OK;
         }
