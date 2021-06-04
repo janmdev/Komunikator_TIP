@@ -72,13 +72,20 @@ namespace TIP_Client.ViewModel
                 while (loggedIn)
                 {
                     var rooms = Client.GetRooms();
-                    fillRoomsUsers(rooms);
+                    fillRooms(rooms);
+                    await Task.Delay(300);
+                }
+            });
+            Task.Factory.StartNew(async () =>
+            {
+                while (loggedIn)
+                {
                     if (inRoom)
                     {
                         var users = Client.GetUsers();
-                        fillRoomsUsers(users);
+                        fillUsers(users);
                     }
-                    await Task.Delay(200);
+                    await Task.Delay(300);
                 }
             });
             Task.Factory.StartNew(async () =>
@@ -98,7 +105,7 @@ namespace TIP_Client.ViewModel
             {
                 EnterRoomAction();
             });
-            LeaveRoomCommand = new Command(args => Client.LeaveRoom());
+            LeaveRoomCommand = new Command(args => LeaveRoomAction());
             this.mainVM = mainVM;
         }
 
@@ -114,7 +121,39 @@ namespace TIP_Client.ViewModel
             }
         }
 
-        private void fillRoomsUsers((ServerCodes, string) codeData)
+        private void fillRooms((ServerCodes, string) codeData)
+        {
+            switch (codeData.Item1)
+            {
+                case ServerCodes.OK_ROOMS:
+                    var roomData = JsonSerializer.Deserialize<GetRoomsData>(codeData.Item2).Rooms;
+                    if (!roomData.Select(p => p.Name).SequenceEqual(rooms.Select(p => p.Name)))
+                    {
+                        App.Current.Dispatcher.Invoke(() =>
+                        {
+                            Rooms.Clear();
+                            roomData.ForEach(p => Rooms.Add(p));
+                        });
+                    }
+                    else if(!roomData.Select(p => p.UsersInRoomCount).SequenceEqual(rooms.Select(p => p.UsersInRoomCount)))
+                    {
+                        App.Current.Dispatcher.Invoke(() =>
+                        {
+                            for (int i = 0; i < Rooms.Count; i++)
+                            {
+                                //Rooms[i].UsersInRoomCount = roomData.First(p => p.RoomID == Rooms[i].RoomID).UsersInRoomCount;
+                                Rooms[i] = roomData.First(p => p.RoomID == Rooms[i].RoomID);
+                            }
+                        });
+                    }
+                    break;
+                default:
+                    MessageBox.Show(codeData.Item1.ToString());
+                    break;
+            }
+        }
+
+        private void fillUsers((ServerCodes, string) codeData)
         {
             switch (codeData.Item1)
             {
@@ -127,30 +166,23 @@ namespace TIP_Client.ViewModel
                             UsersInRoom.Clear();
                             userData.ForEach(p => UsersInRoom.Add(p));
                         });
-                        foreach(var user in userData)
+                        try
                         {
-                            bwp.Add((int)user.UserID, new BufferedWaveProvider(new WaveFormat(44100, 2)));
-                            waveOut.Add((int)user.UserID, new WaveOut());
+                            foreach (var user in userData)
+                            {
+                                if(!bwp.ContainsKey(user.UserID))
+                                    bwp.Add(user.UserID, new BufferedWaveProvider(new WaveFormat(44100, 2)));
+                                if(!waveOut.ContainsKey(user.UserID))
+                                    waveOut.Add(user.UserID, new WaveOut());
+                            }
+                            InitWaveOut(OutputDeviceSelected);
+                            foreach (var wo in waveOut) wo.Value.Play();
                         }
-                        InitWaveOut(OutputDeviceSelected);
-                        foreach (var wo in waveOut) wo.Value.Play();
-                    }
-                    break;
-                case ServerCodes.OK_ROOMS:
-                    var roomData = JsonSerializer.Deserialize<GetRoomsData>(codeData.Item2).Rooms;
-                    if (!roomData.Select(p => p.Name).SequenceEqual(rooms.Select(p => p.Name)))
-                    {
-                        App.Current.Dispatcher.Invoke(() =>
-                        {
-                            Rooms.Clear();
-                            roomData.ForEach(p => Rooms.Add(p));
-                        });
-                    }
-                    break;
-                case ServerCodes.USER_NOT_IN_ROOM_ERROR:
-                    if (inRoom)
-                    {
-                        App.Current.Dispatcher.Invoke(() => InRoom = false);
+                        catch (Exception ex) 
+                        { 
+
+                        }
+
                     }
                     break;
                 default:
@@ -191,7 +223,7 @@ namespace TIP_Client.ViewModel
                     UsersInRoom.Clear();
                     break;
                 default:
-                    fillRoomsUsers(resp);
+                    MessageBox.Show(resp.Item1.ToString());
                     break;
             }
         }
@@ -213,9 +245,14 @@ namespace TIP_Client.ViewModel
                 }
                 else
                 {
-                    foreach (var wo in waveOut) wo.Value.Stop();
-                    waveIn.StopRecording();
                     UsersInRoom.Clear();
+                    try
+                    {
+                        foreach (var wo in waveOut) wo.Value.Stop();
+                    }
+                    catch (Exception) { }
+                    
+                    waveIn.StopRecording();
                 }
                 OnPropertyChanged(nameof(InRoom));
             }
@@ -239,8 +276,7 @@ namespace TIP_Client.ViewModel
                     currentRoomId = SelectedRoom.RoomID;
                     break;
                 default:
-                    fillRoomsUsers(resp);
-                    // MessageBox.Show("TODO " + code_resp.ToString());
+                    MessageBox.Show("TODO " + resp.Item1.ToString());
                     break;
             }
         }
@@ -255,10 +291,32 @@ namespace TIP_Client.ViewModel
                     NewRoomLimit = 0;
                     break;
                 default:
-                    fillRoomsUsers(resp);
-                    //MessageBox.Show("TODO " + code_resp.ToString());
+                    MessageBox.Show("TODO " + resp.Item1.ToString());
                     break;
             }
+        }
+
+        private void LogoutAction()
+        {
+            Task.Run(() => Client.Logout()).ContinueWith(t =>
+            {
+
+                switch (t.Result.Item1)
+                {
+                    case 0:
+                        loggedIn = false;
+                        udpClient.Close();
+                        mainVM.NavigateTo("Login");
+                        break;
+                    case ServerCodes.USER_NOT_LOGGED_ERROR:
+                        MessageBox.Show("Użytkownik nie jest zalogowany");
+                        break;
+                    default:
+                        MessageBox.Show("TODO " + t.Result.Item1.ToString());
+                        break;
+                }
+
+            });
         }
 
         private GetRoomsData.RoomData selectedRoom;
@@ -360,6 +418,7 @@ namespace TIP_Client.ViewModel
                 OnPropertyChanged(nameof(NewRoomName));
             }
         }
+        
 
         private ObservableCollection<WaveOutCapabilities> outputDeviceList;
 
@@ -434,28 +493,7 @@ namespace TIP_Client.ViewModel
 
         private MainVM mainVM;
 
-        private void LogoutAction()
-        {
-            Task.Run(() => Client.Logout()).ContinueWith(t =>
-            {
-
-                switch (t.Result.Item1)
-                {
-                    case 0:
-                        loggedIn = false;
-                        udpClient.Close();
-                        mainVM.NavigateTo("Login");
-                        break;
-                    case ServerCodes.USER_NOT_LOGGED_ERROR:
-                        MessageBox.Show("Użytkownik nie jest zalogowany");
-                        break;
-                    default:
-                        fillRoomsUsers(t.Result);
-                        break;
-                }
-
-            });
-        }
+        
 
         private int getDeviceIn(WaveInCapabilities wIn)
         {

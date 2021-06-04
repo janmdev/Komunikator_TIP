@@ -101,7 +101,6 @@ namespace TIP_Client
         public static (ServerCodes,string) LeaveRoom()
         {
             var code = ClientCodes.LEAVE_ROOM;
-
             return SeverConv(code);
         }
 
