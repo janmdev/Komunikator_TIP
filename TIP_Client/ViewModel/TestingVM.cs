@@ -23,34 +23,29 @@ namespace TIP_Client.ViewModel
 
     public class TestingVM : ViewModelBase
     {
-        private Dictionary<int,BufferedWaveProvider> bwp;
+        private Dictionary<long,BufferedWaveProvider> bwp;
 
         private WaveInEvent waveIn;
 
-        private Dictionary<int,WaveOut> waveOut;
+        private Dictionary<long,WaveOut> waveOut;
 
         private UdpClient udpClient;
 
         private bool loggedIn;
 
-        private ConcurrentQueue<byte[]> audioQueue;
-        private IPEndPoint? endPoint;
+
         public TestingVM(MainVM mainVM)
         {
-            endPoint = new IPEndPoint(IPAddress.Any, Client.connection.Port);
             loggedIn = true;
-            audioQueue = new ConcurrentQueue<byte[]>();
             waveIn = new WaveInEvent();
             waveIn.WaveFormat = new WaveFormat(44100, 2);
             waveIn.DeviceNumber = getDeviceIn(InputDeviceSelected);
             waveIn.BufferMilliseconds = 50;
             waveIn.DataAvailable += new EventHandler<WaveInEventArgs>(SendG722);
-            waveOut = new Dictionary<int, WaveOut>();
-            bwp = new Dictionary<int, BufferedWaveProvider>();
+            waveOut = new Dictionary<long, WaveOut>();
+            bwp = new Dictionary<long, BufferedWaveProvider>();
             udpClient = new UdpClient();
-            var t = Client.TCP;
-            var endp = (IPEndPoint)Client.TCP.Client.LocalEndPoint;
-            udpClient.Client.Bind(endp);
+            udpClient.Client.Bind(Client.TCP.Client.LocalEndPoint);
             Rooms = new ObservableCollection<GetRoomsData.RoomData>();
             UsersInRoom = new ObservableCollection<GetUsersData.UserData>();
             DeleteRoomCommand = new Command(args => DeleteRoomAction());
@@ -86,21 +81,6 @@ namespace TIP_Client.ViewModel
                     await Task.Delay(200);
                 }
             });
-            Task.Factory.StartNew(() =>
-            {
-                while (true)
-                {
-                    if (!audioQueue.IsEmpty)
-                    {
-                        byte[] result;
-                        if (audioQueue.TryDequeue(out result)) ;
-                        {
-                            playAudio(result);
-                        }
-                    }
-                }
-            });
-            //getRoomsTask.Start();
             Task.Factory.StartNew(async () =>
             {
                 while (true)
@@ -109,7 +89,6 @@ namespace TIP_Client.ViewModel
                     {
                         var data = await udpClient.ReceiveAsync();
                         playAudio(data.Buffer);
-                        //audioQueue.Enqueue(data);
                     }
                 }
             });
@@ -182,9 +161,9 @@ namespace TIP_Client.ViewModel
 
         private void playAudio(byte[] data)
         {
-            var decoded = Tools.ShortsToBytes(AudioHelper.DecodeG722(data.Skip(1).ToArray(), 48000));
+            var decoded = Tools.ShortsToBytes(AudioHelper.DecodeG722(data.Skip(4).ToArray(), 48000));
             //bwp.ClearBuffer();
-            var id = Convert.ToInt32(data[0]);
+            var id = BitConverter.ToInt64(data.ToList().GetRange(0,4).ToArray());
             if(bwp.ContainsKey(id)) 
                 bwp[id].AddSamples(decoded, 0, decoded.Length);
         }

@@ -117,7 +117,7 @@ namespace TIP_Server
                     foreach (long clientInRoom in rooms[clients[CID].CurrentRoomID].ClientsInRoom) {
                         if (clientInRoom == CID) continue;
                         var listBytes = audioBytes.ToList();
-                        listBytes.Insert(0, Convert.ToByte((int)clients[CID].UserID));
+                        listBytes.InsertRange(0, BitConverter.GetBytes(clients[CID].UserID));
                         audioBytes = listBytes.ToArray();
                         udpAudioSender.Send(audioBytes, audioBytes.Length, clients[clientInRoom].ClientEndPoint);
                     }
