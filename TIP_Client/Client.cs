@@ -21,7 +21,8 @@ namespace TIP_Client
         public static ConnectionModel connection;
         public static async Task<bool> Connect(string ipAddress, int port)
         {
-            TCP = new TcpClient();
+            TCP = new TcpClient(AddressFamily.InterNetwork);
+
             if (TCP.Connected)
             {
                 return true;

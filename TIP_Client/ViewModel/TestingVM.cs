@@ -1,45 +1,56 @@
-﻿using System.Threading;
+﻿using System.Collections.Concurrent;
+using System.Printing.IndexedProperties;
+using System.Threading;
+using NAudio.Wave;
+using Shared;
+using Shared.DataClasses.Server;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Input;
+using TIP_Client.Helpers;
+using TIP_Client.ViewModel.MVVM;
 
 namespace TIP_Client.ViewModel
 {
-    using NAudio.Wave;
-    using Shared;
-    using Shared.DataClasses.Server;
-    using System;
-    using System.Collections.ObjectModel;
-    using System.Linq;
-    using System.Net;
-    using System.Net.Sockets;
-    using System.Text.Json;
-    using System.Threading.Tasks;
-    using System.Windows;
-    using System.Windows.Input;
-    using TIP_Client.Helpers;
-    using TIP_Client.ViewModel.MVVM;
+    
 
     public class TestingVM : ViewModelBase
     {
-        private BufferedWaveProvider bwp;
+        private Dictionary<int,BufferedWaveProvider> bwp;
 
         private WaveInEvent waveIn;
 
-        private WaveOut waveOut;
+        private Dictionary<int,WaveOut> waveOut;
 
         private UdpClient udpClient;
+
         private bool loggedIn;
+
+        private ConcurrentQueue<byte[]> audioQueue;
+        private IPEndPoint? endPoint;
         public TestingVM(MainVM mainVM)
         {
-            bwp = new BufferedWaveProvider(new WaveFormat(44100, 2));
+            endPoint = new IPEndPoint(IPAddress.Any, Client.connection.Port);
             loggedIn = true;
-
+            audioQueue = new ConcurrentQueue<byte[]>();
             waveIn = new WaveInEvent();
             waveIn.WaveFormat = new WaveFormat(44100, 2);
             waveIn.DeviceNumber = getDeviceIn(InputDeviceSelected);
             waveIn.BufferMilliseconds = 50;
             waveIn.DataAvailable += new EventHandler<WaveInEventArgs>(SendG722);
-
+            waveOut = new Dictionary<int, WaveOut>();
+            bwp = new Dictionary<int, BufferedWaveProvider>();
             udpClient = new UdpClient();
-            udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, 41234));
+            var t = Client.TCP;
+            var endp = (IPEndPoint)Client.TCP.Client.LocalEndPoint;
+            udpClient.Client.Bind(endp);
             Rooms = new ObservableCollection<GetRoomsData.RoomData>();
             UsersInRoom = new ObservableCollection<GetUsersData.UserData>();
             DeleteRoomCommand = new Command(args => DeleteRoomAction());
@@ -60,7 +71,6 @@ namespace TIP_Client.ViewModel
 
             InputDeviceSelected = InputDeviceList.First();
             OutputDeviceSelected = OutputDeviceList.First();
-            InitWaveOut(OutputDeviceSelected);
             LogoutCommand = new Command(args => LogoutAction());
             Task.Factory.StartNew(async () =>
             {
@@ -70,24 +80,40 @@ namespace TIP_Client.ViewModel
                     fillRoomsUsers(rooms);
                     if (inRoom)
                     {
-                        var users =  Client.GetUsers();
+                        var users = Client.GetUsers();
                         fillRoomsUsers(users);
                     }
                     await Task.Delay(200);
                 }
             });
+            Task.Factory.StartNew(() =>
+            {
+                while (true)
+                {
+                    if (!audioQueue.IsEmpty)
+                    {
+                        byte[] result;
+                        if (audioQueue.TryDequeue(out result)) ;
+                        {
+                            playAudio(result);
+                        }
+                    }
+                }
+            });
             //getRoomsTask.Start();
-            udpListenTask = new Task(async () =>
+            Task.Factory.StartNew(async () =>
             {
                 while (true)
                 {
                     if (inRoom)
                     {
-                        playAudio((await udpClient.ReceiveAsync()).Buffer);
+                        var data = await udpClient.ReceiveAsync();
+                        playAudio(data.Buffer);
+                        //audioQueue.Enqueue(data);
                     }
                 }
             });
-            udpListenTask.Start();
+            //udpListenTask.Start();
             NewRoomCommand = new Command(args => NewRoomAction());
             EnterRoomCommand = new Command(args =>
             {
@@ -102,9 +128,11 @@ namespace TIP_Client.ViewModel
 
         private void InitWaveOut(WaveOutCapabilities device)
         {
-            waveOut = new WaveOut();
-            waveOut.DeviceNumber = getDeviceOut(device);
-            waveOut.Init(bwp);
+            foreach(var wo in waveOut)
+            {
+                wo.Value.DeviceNumber = getDeviceOut(device);
+                wo.Value.Init(bwp[wo.Key]);
+            }
         }
 
         private void fillRoomsUsers((ServerCodes, string) codeData)
@@ -120,8 +148,14 @@ namespace TIP_Client.ViewModel
                             UsersInRoom.Clear();
                             userData.ForEach(p => UsersInRoom.Add(p));
                         });
+                        foreach(var user in userData)
+                        {
+                            bwp.Add((int)user.UserID, new BufferedWaveProvider(new WaveFormat(44100, 2)));
+                            waveOut.Add((int)user.UserID, new WaveOut());
+                        }
+                        InitWaveOut(OutputDeviceSelected);
+                        foreach (var wo in waveOut) wo.Value.Play();
                     }
-
                     break;
                 case ServerCodes.OK_ROOMS:
                     var roomData = JsonSerializer.Deserialize<GetRoomsData>(codeData.Item2).Rooms;
@@ -148,20 +182,20 @@ namespace TIP_Client.ViewModel
 
         private void playAudio(byte[] data)
         {
-            var decoded = Tools.ShortsToBytes(AudioHelper.DecodeG722(data, 48000));
-            waveOut.Stop();
-            bwp.ClearBuffer();
-            bwp.AddSamples(decoded, 0, decoded.Length);
-            waveOut.Play();
+            var decoded = Tools.ShortsToBytes(AudioHelper.DecodeG722(data.Skip(1).ToArray(), 48000));
+            //bwp.ClearBuffer();
+            var id = Convert.ToInt32(data[0]);
+            if(bwp.ContainsKey(id)) 
+                bwp[id].AddSamples(decoded, 0, decoded.Length);
         }
 
-        private async void SendG722(object sender, WaveInEventArgs e)
+        private void SendG722(object sender, WaveInEventArgs e)
         {
             var encoded = AudioHelper.EncodeG722(e.Buffer, 48000);
-            await udpClient.SendAsync(encoded, encoded.Length, new IPEndPoint(IPAddress.Parse(Client.connection.IPAddr), Client.connection.Port));
+            udpClient.Send(encoded, encoded.Length, new IPEndPoint(IPAddress.Parse(Client.connection.IPAddr), Client.connection.Port));
         }
 
-        private async void DeleteRoomAction()
+        private void DeleteRoomAction()
         {
             if (currentRoomId == SelectedRoom.RoomID) LeaveRoomAction();
             var codeResp = Client.DeleteRoom(SelectedRoom.RoomID);
@@ -200,6 +234,7 @@ namespace TIP_Client.ViewModel
                 }
                 else
                 {
+                    foreach (var wo in waveOut) wo.Value.Stop();
                     waveIn.StopRecording();
                     UsersInRoom.Clear();
                 }
@@ -209,7 +244,7 @@ namespace TIP_Client.ViewModel
 
         private long currentRoomId;
 
-        private async void EnterRoomAction()
+        private void EnterRoomAction()
         {
             if (InRoom && SelectedRoom.RoomID != currentRoomId)
             {
@@ -231,7 +266,7 @@ namespace TIP_Client.ViewModel
             }
         }
 
-        private async void NewRoomAction()
+        private void NewRoomAction()
         {
             var resp = Client.CreateRoom(NewRoomName, "", NewRoomLimit);
             switch (resp.Item1)

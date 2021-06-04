@@ -97,7 +97,8 @@ namespace TIP_Server
             while (runServer) {
                 IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Any, 0);
                 byte[] audioBytes = udpAudioListener.Receive(ref clientEndPoint);
-                if (!recivedAudio.ContainsKey(clientEndPoint.ToString()) || (recivedAudio[clientEndPoint.ToString()] == null)) {
+                if (!recivedAudio.ContainsKey(clientEndPoint.ToString()) || (recivedAudio[clientEndPoint.ToString()] == null))
+                {
                     recivedAudio[clientEndPoint.ToString()] = new ConcurrentQueue<byte[]>();
                 }
                 recivedAudio[clientEndPoint.ToString()].Enqueue(audioBytes);
@@ -115,6 +116,9 @@ namespace TIP_Server
                     recivedAudio[clientEndPointString].TryDequeue(out byte[] audioBytes);
                     foreach (long clientInRoom in rooms[clients[CID].CurrentRoomID].ClientsInRoom) {
                         if (clientInRoom == CID) continue;
+                        var listBytes = audioBytes.ToList();
+                        listBytes.Insert(0, Convert.ToByte((int)clients[CID].UserID));
+                        audioBytes = listBytes.ToArray();
                         udpAudioSender.Send(audioBytes, audioBytes.Length, clients[clientInRoom].ClientEndPoint);
                     }
                 }
