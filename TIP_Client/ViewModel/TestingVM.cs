@@ -193,11 +193,18 @@ namespace TIP_Client.ViewModel
 
         private void playAudio(byte[] data)
         {
-            var decoded = Tools.ShortsToBytes(AudioHelper.DecodeG722(data.Skip(4).ToArray(), 48000));
+            var decoded = Tools.ShortsToBytes(AudioHelper.DecodeG722(data.Skip(8).ToArray(), 48000));
             //bwp.ClearBuffer();
-            var id = BitConverter.ToInt64(data.ToList().GetRange(0,4).ToArray());
-            if(bwp.ContainsKey(id)) 
-                bwp[id].AddSamples(decoded, 0, decoded.Length);
+            try
+            {
+                var id = BitConverter.ToInt64(data.ToList().GetRange(0, 8).ToArray(), 0);
+                if (bwp.ContainsKey(id))
+                    bwp[id].AddSamples(decoded, 0, decoded.Length);
+            }catch(Exception ex)
+            {
+
+            }
+            
         }
 
         private void SendG722(object sender, WaveInEventArgs e)
