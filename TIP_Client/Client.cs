@@ -59,7 +59,7 @@ namespace TIP_Client
                 Password = password
             });
 
-            return SeverConv(code);
+            return SeverConv(code,data);
         }
 
         public static (ServerCodes,string) Login(string login_, string password)

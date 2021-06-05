@@ -117,7 +117,7 @@ namespace TIP_Server
                     foreach (long clientInRoom in rooms[clients[CID].CurrentRoomID].ClientsInRoom) {
                         if (clientInRoom == CID) continue;
                         var listBytes = audioBytes.ToList();
-                        listBytes.InsertRange(0, BitConverter.GetBytes(clients[CID].UserID));
+                        listBytes.Insert(0, Convert.ToByte(rooms[clients[CID].CurrentRoomID].ClientsInRoom.IndexOf(clientInRoom)));
                         audioBytes = listBytes.ToArray();
                         udpAudioSender.Send(audioBytes, audioBytes.Length, clients[clientInRoom].ClientEndPoint);
                     }
@@ -245,7 +245,7 @@ namespace TIP_Server
                     UsersInRoomCount = r.Value.ClientsInRoomCount
                 });
             }
-            return (ServerCodes.OK_ROOMS, JsonSerializer.Serialize(getRoomsData));
+            return (ServerCodes.OK, JsonSerializer.Serialize(getRoomsData));
         }
 
         private (ServerCodes serverCode, string serverDataJSON) GetUsersMethod(long CID) {
@@ -262,7 +262,7 @@ namespace TIP_Server
                     Talking = clients[u].Talking
                 });
             }
-            return (ServerCodes.OK_USERS, JsonSerializer.Serialize(getUsersData));
+            return (ServerCodes.OK, JsonSerializer.Serialize(getUsersData));
         }
     }
 }

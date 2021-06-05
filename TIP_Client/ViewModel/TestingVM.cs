@@ -23,11 +23,11 @@ namespace TIP_Client.ViewModel
 
     public class TestingVM : ViewModelBase
     {
-        private Dictionary<long,BufferedWaveProvider> bwp;
+        private Dictionary<int,BufferedWaveProvider> bwp;
 
         private WaveInEvent waveIn;
 
-        private Dictionary<long,WaveOut> waveOut;
+        private Dictionary<int, WaveOut> waveOut;
 
         private UdpClient udpClient;
 
@@ -42,8 +42,8 @@ namespace TIP_Client.ViewModel
             waveIn.DeviceNumber = getDeviceIn(InputDeviceSelected);
             waveIn.BufferMilliseconds = 50;
             waveIn.DataAvailable += new EventHandler<WaveInEventArgs>(SendG722);
-            waveOut = new Dictionary<long, WaveOut>();
-            bwp = new Dictionary<long, BufferedWaveProvider>();
+            waveOut = new Dictionary<int, WaveOut>();
+            bwp = new Dictionary<int, BufferedWaveProvider>();
             udpClient = new UdpClient();
             udpClient.Client.Bind(Client.TCP.Client.LocalEndPoint);
             Rooms = new ObservableCollection<GetRoomsData.RoomData>();
@@ -125,7 +125,7 @@ namespace TIP_Client.ViewModel
         {
             switch (codeData.Item1)
             {
-                case ServerCodes.OK_ROOMS:
+                case ServerCodes.OK:
                     var roomData = JsonSerializer.Deserialize<GetRoomsData>(codeData.Item2).Rooms;
                     if (!roomData.Select(p => p.Name).SequenceEqual(rooms.Select(p => p.Name)))
                     {
@@ -147,6 +147,8 @@ namespace TIP_Client.ViewModel
                         });
                     }
                     break;
+                case ServerCodes.NO_ROOMS_ERROR:
+                    break;
                 default:
                     MessageBox.Show(codeData.Item1.ToString());
                     break;
@@ -157,7 +159,7 @@ namespace TIP_Client.ViewModel
         {
             switch (codeData.Item1)
             {
-                case ServerCodes.OK_USERS:
+                case ServerCodes.OK:
                     var userData = JsonSerializer.Deserialize<GetUsersData>(codeData.Item2).Users;
                     if (!userData.Select(p => p.UserID).SequenceEqual(usersInRoom.Select(p => p.UserID)))
                     {
@@ -168,19 +170,19 @@ namespace TIP_Client.ViewModel
                         });
                         try
                         {
-                            foreach (var user in userData)
+                            for(int i = 0; i <= userData.Count; i++)
                             {
-                                if(!bwp.ContainsKey(user.UserID))
-                                    bwp.Add(user.UserID, new BufferedWaveProvider(new WaveFormat(44100, 2)));
-                                if(!waveOut.ContainsKey(user.UserID))
-                                    waveOut.Add(user.UserID, new WaveOut());
+                                if(!bwp.ContainsKey(i))
+                                    bwp.Add(i, new BufferedWaveProvider(new WaveFormat(44100, 2)));
+                                if(!waveOut.ContainsKey(i))
+                                    waveOut.Add(i, new WaveOut());
                             }
                             InitWaveOut(OutputDeviceSelected);
                             foreach (var wo in waveOut) wo.Value.Play();
                         }
-                        catch (Exception ex) 
-                        { 
-
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(ex.Message);
                         }
 
                     }
@@ -193,9 +195,9 @@ namespace TIP_Client.ViewModel
 
         private void playAudio(byte[] data)
         {
-            var decoded = Tools.ShortsToBytes(AudioHelper.DecodeG722(data.Skip(4).ToArray(), 48000));
+            var decoded = Tools.ShortsToBytes(AudioHelper.DecodeG722(data.Skip(1).ToArray(), 48000));
             //bwp.ClearBuffer();
-            var id = BitConverter.ToInt64(data.ToList().GetRange(0,4).ToArray());
+            var id = Convert.ToInt32(data[0]);
             if(bwp.ContainsKey(id)) 
                 bwp[id].AddSamples(decoded, 0, decoded.Length);
         }
@@ -250,7 +252,10 @@ namespace TIP_Client.ViewModel
                     {
                         foreach (var wo in waveOut) wo.Value.Stop();
                     }
-                    catch (Exception) { }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message);
+                    }
                     
                     waveIn.StopRecording();
                 }

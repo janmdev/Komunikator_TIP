@@ -10,7 +10,7 @@ namespace TIP_Server
     {
         static void Main(string[] args) {
 
-            string serverIP = "192.168.1.20";
+            string serverIP = "192.168.1.109";
             ushort serverPort = 41234;
             bool runServer = true;
 
