@@ -37,36 +37,19 @@ namespace TIP_Client.ViewModel
         public TestingVM(MainVM mainVM)
         {
             loggedIn = true;
-            waveIn = new WaveInEvent();
-            waveIn.WaveFormat = new WaveFormat(44100, 2);
-            waveIn.DeviceNumber = getDeviceIn(InputDeviceSelected);
-            waveIn.BufferMilliseconds = 50;
-            waveIn.DataAvailable += new EventHandler<WaveInEventArgs>(SendG722);
             waveOut = new Dictionary<int, WaveOut>();
             bwp = new Dictionary<int, BufferedWaveProvider>();
             udpClient = new UdpClient();
             udpClient.Client.Bind(Client.TCP.Client.LocalEndPoint);
             Rooms = new ObservableCollection<GetRoomsData.RoomData>();
             UsersInRoom = new ObservableCollection<GetUsersData.UserData>();
-            DeleteRoomCommand = new Command(args => DeleteRoomAction());
-
             OutputDeviceList = new ObservableCollection<WaveOutCapabilities>();
-            int waveOutDevices = WaveOut.DeviceCount;
-            for (int waveOutDevice = 0; waveOutDevice < waveOutDevices; waveOutDevice++)
-            {
-                OutputDeviceList.Add(WaveOut.GetCapabilities(waveOutDevice));
-            }
-
             InputDeviceList = new ObservableCollection<WaveInCapabilities>();
-            int waveInDevices = WaveIn.DeviceCount;
-            for (int waveInDevice = 0; waveInDevice < waveInDevices; waveInDevice++)
-            {
-                InputDeviceList.Add(WaveIn.GetCapabilities(waveInDevice));
-            }
-
+            //InitWaveIn();
+            fillInDevices();
+            fillOutDevices();
             InputDeviceSelected = InputDeviceList.First();
             OutputDeviceSelected = OutputDeviceList.First();
-            LogoutCommand = new Command(args => LogoutAction());
             Task.Factory.StartNew(async () =>
             {
                 while (loggedIn)
@@ -99,18 +82,13 @@ namespace TIP_Client.ViewModel
                     }
                 }
             });
-            //udpListenTask.Start();
+            LogoutCommand = new Command(args => LogoutAction());
             NewRoomCommand = new Command(args => NewRoomAction());
-            EnterRoomCommand = new Command(args =>
-            {
-                EnterRoomAction();
-            });
+            EnterRoomCommand = new Command(args => EnterRoomAction());
             LeaveRoomCommand = new Command(args => LeaveRoomAction());
+            DeleteRoomCommand = new Command(args => DeleteRoomAction());
             this.mainVM = mainVM;
         }
-
-        private Task udpListenTask;
-        //private Task getRoomsTask;
 
         private void InitWaveOut(WaveOutCapabilities device)
         {
@@ -119,6 +97,15 @@ namespace TIP_Client.ViewModel
                 wo.Value.DeviceNumber = getDeviceOut(device);
                 wo.Value.Init(bwp[wo.Key]);
             }
+        }
+
+        private void InitWaveIn()
+        {
+            waveIn = new WaveInEvent();
+            waveIn.WaveFormat = new WaveFormat(44100, 2);
+            waveIn.DeviceNumber = getDeviceIn(InputDeviceSelected);
+            waveIn.BufferMilliseconds = 50;
+            waveIn.DataAvailable += new EventHandler<WaveInEventArgs>(SendG722);
         }
 
         private void fillRooms((ServerCodes, string) codeData)
@@ -243,21 +230,15 @@ namespace TIP_Client.ViewModel
                 inRoom = value;
                 if (value)
                 {
+                    InitWaveIn();
                     waveIn.StartRecording();
                 }
                 else
                 {
                     UsersInRoom.Clear();
-                    try
-                    {
-                        foreach (var wo in waveOut) wo.Value.Stop();
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.Message);
-                    }
-                    
+                    foreach (var wo in waveOut) wo.Value.Stop();
                     waveIn.StopRecording();
+                    waveIn.Dispose();
                 }
                 OnPropertyChanged(nameof(InRoom));
             }
@@ -267,11 +248,11 @@ namespace TIP_Client.ViewModel
 
         private void EnterRoomAction()
         {
-            if (InRoom && SelectedRoom.RoomID != currentRoomId)
+            if (inRoom && selectedRoom.RoomID != currentRoomId)
             {
                 LeaveRoomAction();
             }
-
+            else if (inRoom && selectedRoom.RoomID == currentRoomId) return;
             if (InRoom) throw new Exception("Nie udało się opuścić pokoju");
             var resp = Client.EnterRoom(SelectedRoom.RoomID);
             switch (resp.Item1)
@@ -420,7 +401,7 @@ namespace TIP_Client.ViewModel
             set
             {
                 newRoomLimit = value;
-                OnPropertyChanged(nameof(NewRoomName));
+                OnPropertyChanged(nameof(NewRoomLimit));
             }
         }
         
@@ -489,7 +470,10 @@ namespace TIP_Client.ViewModel
                     waveIn.DeviceNumber = getDeviceIn(value);
                     waveIn.StartRecording();
                 }
-                else waveIn.DeviceNumber = getDeviceIn(value);
+                else
+                {
+                    if(waveIn != null) waveIn.DeviceNumber = getDeviceIn(value);
+                }
 
 
                 OnPropertyChanged(nameof(InputDeviceSelected));
@@ -518,6 +502,24 @@ namespace TIP_Client.ViewModel
                 if (wOut.ProductName == WaveOut.GetCapabilities(waveOutDevice).ProductName) return waveOutDevice;
             }
             return 0;
+        }
+
+        private void fillOutDevices()
+        {
+            int waveOutDevices = WaveOut.DeviceCount;
+            for (int waveOutDevice = 0; waveOutDevice < waveOutDevices; waveOutDevice++)
+            {
+                OutputDeviceList.Add(WaveOut.GetCapabilities(waveOutDevice));
+            }
+        }
+
+        private void fillInDevices()
+        {
+            int waveInDevices = WaveIn.DeviceCount;
+            for (int waveInDevice = 0; waveInDevice < waveInDevices; waveInDevice++)
+            {
+                InputDeviceList.Add(WaveIn.GetCapabilities(waveInDevice));
+            }
         }
     }
 }

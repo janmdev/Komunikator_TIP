@@ -3,12 +3,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:local="clr-namespace:TIP_Client.View"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <TextBox HorizontalAlignment="Left" Height="30" Margin="253,116,0,0" Text="{Binding Login}" TextWrapping="Wrap" VerticalAlignment="Top" Width="275"/>
-        <PasswordBox HorizontalAlignment="Left" Name="PasswordBox" Height="30" Margin="253,166,0,0" VerticalAlignment="Top" Width="275"/>
+        <TextBox Style="{StaticResource MaterialDesignFloatingHintTextBox}" md:HintAssist.Hint="Login" HorizontalAlignment="Left" Height="50" Margin="253,83,0,0" Text="{Binding Login}" TextWrapping="Wrap" VerticalAlignment="Top" Width="275"/>
+        <PasswordBox Style="{StaticResource MaterialDesignFloatingHintPasswordBox}" md:HintAssist.Hint="Hasło" HorizontalAlignment="Left" Name="PasswordBox" Height="50" Margin="253,153,0,0" VerticalAlignment="Top" Width="275"/>
         <Button Content="Login" Command="{Binding LoginCommand}" CommandParameter="{Binding ElementName=PasswordBox}" HorizontalAlignment="Left" Height="36" Margin="253,225,0,0" VerticalAlignment="Top" Width="275"/>
         <Button Content="Register" Command="{Binding RegisterCommand}" HorizontalAlignment="Left" Height="36" Margin="253,277,0,0" VerticalAlignment="Top" Width="275"/>
 

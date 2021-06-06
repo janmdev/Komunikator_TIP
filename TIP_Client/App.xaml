@@ -4,8 +4,10 @@
              xmlns:local="clr-namespace:TIP_Client"
              xmlns:vm="clr-namespace:TIP_Client.ViewModel"
              xmlns:views="clr-namespace:TIP_Client.View"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
+        <ResourceDictionary>
         <DataTemplate DataType="{x:Type vm:TestingVM}">
             <views:TestingView/>
         </DataTemplate>
@@ -18,5 +20,10 @@
         <DataTemplate DataType="{x:Type vm:RegisterVM}">
             <views:RegisterView/>
         </DataTemplate>
+            <ResourceDictionary.MergedDictionaries>
+                <materialDesign:BundledTheme BaseTheme="Dark" PrimaryColor="Blue" SecondaryColor="Lime" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Defaults.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>
