@@ -8,10 +8,10 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <ComboBox HorizontalAlignment="Left" Margin="90,10,0,0" VerticalAlignment="Top" Width="265" ItemsSource="{Binding OutputDeviceList}" DisplayMemberPath="ProductName" SelectedItem="{Binding OutputDeviceSelected}"/>
-        <Label Content="Wyjście" HorizontalAlignment="Left" Height="22" Margin="10,10,0,0" Padding="0" VerticalAlignment="Top" Width="76"/>
-        <ComboBox HorizontalAlignment="Left" Margin="90,50,0,0" VerticalAlignment="Top" Width="265" ItemsSource="{Binding InputDeviceList}" DisplayMemberPath="ProductName" SelectedItem="{Binding InputDeviceSelected}"/>
-        <Label Content="Wejście" HorizontalAlignment="Left" Height="22" Margin="10,50,0,0" Padding="0" VerticalAlignment="Top" Width="76"/>
+        <ComboBox HorizontalAlignment="Left" Margin="90,15,0,0" VerticalAlignment="Top" Width="265" ItemsSource="{Binding OutputDeviceList}" DisplayMemberPath="ProductName" SelectedItem="{Binding OutputDeviceSelected}"/>
+        <Label Content="Wyjście" HorizontalAlignment="Left" Height="22" Margin="10,20,0,0" Padding="0" VerticalAlignment="Top" Width="76"/>
+        <ComboBox HorizontalAlignment="Left" Margin="90,55,0,0" VerticalAlignment="Top" Width="265" ItemsSource="{Binding InputDeviceList}" DisplayMemberPath="ProductName" SelectedItem="{Binding InputDeviceSelected}"/>
+        <Label Content="Wejście" HorizontalAlignment="Left" Height="22" Margin="10,60,0,0" Padding="0" VerticalAlignment="Top" Width="76"/>
         <Button Content="Wyloguj się" Command="{Binding LogoutCommand}" HorizontalAlignment="Left" Height="62" Margin="655,10,0,0" VerticalAlignment="Top" Width="124"/>
         <DataGrid Name="RoomsDG" SelectionUnit="FullRow" CanUserAddRows="False" IsReadOnly="True" ItemsSource="{Binding Rooms}" SelectedItem="{Binding SelectedRoom}"  HorizontalAlignment="Left" Height="219" Margin="91,92,0,0" VerticalAlignment="Top" Width="309" AutoGenerateColumns="False">
             <DataGrid.Columns>
@@ -31,7 +31,7 @@
             <DataGrid.InputBindings>
                 <MouseBinding Gesture="LeftDoubleClick" Command="{Binding EnterRoomCommand}" />
             </DataGrid.InputBindings>
-            
+
         </DataGrid>
         <TextBox HorizontalAlignment="Left" Height="25" Margin="91,328,0,0" Text="{Binding NewRoomName}" TextWrapping="Wrap" VerticalAlignment="Top" Width="173"/>
         <TextBox HorizontalAlignment="Left" Height="25" Margin="283,328,0,0" Text ="{Binding NewRoomLimit}"  TextWrapping="Wrap" VerticalAlignment="Top" Width="51"/>
@@ -44,9 +44,13 @@
             </DataGrid.Columns>
         </DataGrid>
         <Button Content="Wyjdź" IsEnabled="{Binding InRoom}" Command="{Binding LeaveRoomCommand}" HorizontalAlignment="Left" Height="25" Margin="439,328,0,0" VerticalAlignment="Top" Width="268"/>
+        <Label Content="Głośność" HorizontalAlignment="Left" Height="22" Margin="414,20,0,0" Padding="0" VerticalAlignment="Top" Width="76"/>
+        <Slider HorizontalAlignment="Left"  Value="{Binding Volume}" Margin="414,50,0,0" VerticalAlignment="Top" Width="200" Minimum="1" Maximum="100"/>
         <md:DialogHost Identifier = "DeleteRoomDialog" Style="{StaticResource MaterialDesignEmbeddedDialogHost}" CloseOnClickAway = "True" >
         </md:DialogHost >
         <md:DialogHost Identifier = "OkDialog" Style="{StaticResource MaterialDesignEmbeddedDialogHost}" CloseOnClickAway = "True" >
+            
         </md:DialogHost >
+
     </Grid>
 </UserControl>

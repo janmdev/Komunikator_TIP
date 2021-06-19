@@ -36,11 +36,14 @@ namespace TIP_Client.ViewModel
 
         private bool loggedIn;
 
+        private MainVM mainVM;
 
         public AudioVM(MainVM mainVM)
         {
+            
             loggedIn = true;
             waveOut = new Dictionary<int, WaveOut>();
+            Volume = 100;
             bwp = new Dictionary<int, BufferedWaveProvider>();
             udpClient = new UdpClient();
             udpClient.Client.Bind(Client.TCP.Client.LocalEndPoint);
@@ -96,6 +99,8 @@ namespace TIP_Client.ViewModel
         {
             foreach(var wo in waveOut)
             {
+                bwp[wo.Key].ClearBuffer();
+                wo.Value.Volume = (float)volume/100;
                 wo.Value.DeviceNumber = getDeviceOut(device);
                 wo.Value.Init(bwp[wo.Key]);
             }
@@ -210,7 +215,7 @@ namespace TIP_Client.ViewModel
         private async void DeleteRoomAction()
         {
             if (SelectedRoom.RoomCreatorUserID != Client.ClientID) return;
-            DialogContent = "Czy na pewno chcesz usunąć zapisany adres?";
+            DialogContent = $"Czy na pewno chcesz usunąć pokój {SelectedRoom.Name}?";
             string result = (string)await DialogHost.Show(new OkCancelDialog(), "DeleteRoomDialog");
             if (result == "Accept")
             {
@@ -456,8 +461,9 @@ namespace TIP_Client.ViewModel
             set
             {
                 outputDeviceSelected = value;
+                if(inRoom) foreach(var wo in waveOut) wo.Value.Stop();
                 if (waveOut != null) InitWaveOut(value);
-
+                if (inRoom) foreach (var wo in waveOut) wo.Value.Play();
                 OnPropertyChanged(nameof(OutputDeviceSelected));
             }
         }
@@ -504,7 +510,29 @@ namespace TIP_Client.ViewModel
             }
         }
 
-        private MainVM mainVM;
+        private int volume;
+
+        public int Volume
+        {
+            get
+            {
+                return volume;
+            }
+            set
+            {
+                volume = value;
+                if(inRoom) foreach (var wo in waveOut) wo.Value.Stop();
+                InitWaveOut(OutputDeviceSelected);
+                if (inRoom)
+                {
+                    foreach (var wo in waveOut)
+                    {
+                        wo.Value.Play();
+                    }
+                }
+                OnPropertyChanged(nameof(Volume));
+            }
+        }
 
         
 
