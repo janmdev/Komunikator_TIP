@@ -68,13 +68,18 @@ namespace TIP_Client
                 ConnectionModel cm = JsonSerializer.Deserialize<ConnectionModel>(File.ReadAllText(Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tip kom",
                     "config.json")));
-                if (cm.Port != 0 && Regex.Match(cm.IPAddr,@"^((25[0-5]|(2[0-4]|1[0-9]|[1-9]|)[0-9])(\.(?!$)|$)){4}$").Success)
+                if (cm.Port != 0 && Regex.Match(cm.IPAddr, @"^((25[0-5]|(2[0-4]|1[0-9]|[1-9]|)[0-9])(\.(?!$)|$)){4}$")
+                    .Success)
                 {
                     flag = true;
                 }
             }
             catch (Exception)
-            { }
+            {
+                File.WriteAllText(Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tip kom",
+                    "config.json"),JsonSerializer.Serialize(new ConnectionModel()));
+            }
 
             return flag;
         }
