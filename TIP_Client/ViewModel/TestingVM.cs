@@ -128,13 +128,13 @@ namespace TIP_Client.ViewModel
                         {
                             for (int i = 0; i < Rooms.Count; i++)
                             {
-                                //Rooms[i].UsersInRoomCount = roomData.First(p => p.RoomID == Rooms[i].RoomID).UsersInRoomCount;
                                 Rooms[i] = roomData.First(p => p.RoomID == Rooms[i].RoomID);
                             }
                         });
                     }
                     break;
                 case ServerCodes.NO_ROOMS_ERROR:
+                    App.Current.Dispatcher.Invoke(() => Rooms.Clear());
                     break;
                 default:
                     MessageBox.Show(codeData.Item1.ToString());
@@ -174,6 +174,9 @@ namespace TIP_Client.ViewModel
 
                     }
                     break;
+                case ServerCodes.USER_NOT_IN_ROOM_ERROR:
+                    if(inRoom) MessageBox.Show(codeData.Item1.ToString());
+                    break;
                 default:
                     MessageBox.Show(codeData.Item1.ToString());
                     break;
@@ -192,7 +195,7 @@ namespace TIP_Client.ViewModel
         private void SendG722(object sender, WaveInEventArgs e)
         {
             var encoded = AudioHelper.EncodeG722(e.Buffer, 48000);
-            udpClient.Send(encoded, encoded.Length, new IPEndPoint(IPAddress.Parse(Client.connection.IPAddr), Client.connection.Port));
+            if(udpClient.Client != null) udpClient.Send(encoded, encoded.Length, new IPEndPoint(IPAddress.Parse(Client.connection.IPAddr), Client.connection.Port));
         }
 
         private void DeleteRoomAction()
@@ -284,6 +287,7 @@ namespace TIP_Client.ViewModel
 
         private void LogoutAction()
         {
+            if (inRoom) LeaveRoomAction();
             Task.Run(() => Client.Logout()).ContinueWith(t =>
             {
 
