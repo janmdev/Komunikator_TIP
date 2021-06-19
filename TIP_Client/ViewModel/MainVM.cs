@@ -32,7 +32,7 @@ namespace TIP_Client.ViewModel
                         SelectedVM = new LoginVM(this);
                         break;
                     case "Testing":
-                        SelectedVM = new TestingVM(this);
+                        SelectedVM = new AudioVM(this);
                         break;
                     case "RegisterAction":
                         SelectedVM = new RegisterVM(this);

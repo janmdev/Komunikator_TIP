@@ -8,8 +8,8 @@
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
-        <DataTemplate DataType="{x:Type vm:TestingVM}">
-            <views:TestingView/>
+        <DataTemplate DataType="{x:Type vm:AudioVM}">
+            <views:AudioView/>
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:ConnectVM}">
             <views:ConnectView/>

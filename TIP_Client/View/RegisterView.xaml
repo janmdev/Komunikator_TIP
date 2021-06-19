@@ -6,15 +6,16 @@
              xmlns:local="clr-namespace:TIP_Client.View"
              mc:Ignorable="d" 
              xmlns:converter="clr-namespace:TIP_Client.Converters"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <converter:MultiBindingToArray x:Key="Cv" />
     </UserControl.Resources>
     <Grid>
-        <TextBox HorizontalAlignment="Center" Height="33" Margin="0,106,0,0" Text="{Binding Login}" TextWrapping="Wrap" VerticalAlignment="Top" Width="205"/>
-        <PasswordBox HorizontalAlignment="Center" Name="Password" Height="33" Margin="0,167,0,0" VerticalAlignment="Top" Width="205"/>
-        <PasswordBox HorizontalAlignment="Center" Name="PasswordConfirm" Height="33" Margin="0,225,0,0" VerticalAlignment="Top" Width="205"/>
-        <Button Content="Register" Command="{Binding RegisterCommand}" HorizontalAlignment="Center" Height="33" Margin="0,283,0,0" VerticalAlignment="Top" Width="205">
+        <TextBox Style="{StaticResource MaterialDesignFloatingHintTextBox}" materialDesign:HintAssist.Hint="Login" HorizontalAlignment="Center" Height="50" Margin="0,106,0,0" Text="{Binding Login}" TextWrapping="Wrap" VerticalAlignment="Top" Width="205"/>
+        <PasswordBox Style="{StaticResource MaterialDesignFloatingHintPasswordBox}" materialDesign:HintAssist.Hint="Hasło"  HorizontalAlignment="Center" Name="Password" Height="50" Margin="0,167,0,0" VerticalAlignment="Top" Width="205"/>
+        <PasswordBox Style="{StaticResource MaterialDesignFloatingHintPasswordBox}" materialDesign:HintAssist.Hint="Powtórz hasło"  HorizontalAlignment="Center" Name="PasswordConfirm" Height="50" Margin="0,225,0,0" VerticalAlignment="Top" Width="205"/>
+        <Button Content="Zarejestruj się" Command="{Binding RegisterCommand}" HorizontalAlignment="Center" Height="33" Margin="0,283,0,0" VerticalAlignment="Top" Width="205">
             <Button.CommandParameter>
                 <MultiBinding Converter="{StaticResource Cv}">
                     <Binding ElementName="Password"/>
@@ -22,7 +23,10 @@
                 </MultiBinding>
             </Button.CommandParameter>
         </Button>
-        <Button Content="Go back" Command="{Binding BackCommand}" HorizontalAlignment="Left" Height="45" VerticalAlignment="Top" Width="70"/>
-
+        <Button Command="{Binding BackCommand}" HorizontalAlignment="Left" Height="45" VerticalAlignment="Top" Width="70">
+            <materialDesign:PackIcon Kind="ArrowBack" Height="40"/>
+        </Button>
+        <materialDesign:DialogHost Identifier = "OkDialog" Style="{StaticResource MaterialDesignEmbeddedDialogHost}" CloseOnClickAway = "True" >
+        </materialDesign:DialogHost >
     </Grid>
 </UserControl>

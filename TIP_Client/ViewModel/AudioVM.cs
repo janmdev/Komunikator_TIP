@@ -15,14 +15,16 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using MaterialDesignThemes.Wpf;
 using TIP_Client.Helpers;
+using TIP_Client.View;
 using TIP_Client.ViewModel.MVVM;
 
 namespace TIP_Client.ViewModel
 {
     
 
-    public class TestingVM : ViewModelBase
+    public class AudioVM : ViewModelBase
     {
         private Dictionary<int,BufferedWaveProvider> bwp;
 
@@ -35,7 +37,7 @@ namespace TIP_Client.ViewModel
         private bool loggedIn;
 
 
-        public TestingVM(MainVM mainVM)
+        public AudioVM(MainVM mainVM)
         {
             loggedIn = true;
             waveOut = new Dictionary<int, WaveOut>();
@@ -46,7 +48,6 @@ namespace TIP_Client.ViewModel
             UsersInRoom = new ObservableCollection<GetUsersData.UserData>();
             OutputDeviceList = new ObservableCollection<WaveOutCapabilities>();
             InputDeviceList = new ObservableCollection<WaveInCapabilities>();
-            //InitWaveIn();
             fillInDevices();
             fillOutDevices();
             InputDeviceSelected = InputDeviceList.First();
@@ -103,13 +104,13 @@ namespace TIP_Client.ViewModel
         private void InitWaveIn()
         {
             waveIn = new WaveInEvent();
-            waveIn.WaveFormat = new WaveFormat(44100, 2);
+            waveIn.WaveFormat = new WaveFormat(48000, 2);
             waveIn.DeviceNumber = getDeviceIn(InputDeviceSelected);
             waveIn.BufferMilliseconds = 50;
             waveIn.DataAvailable += new EventHandler<WaveInEventArgs>(SendG722);
         }
 
-        private void fillRooms((ServerCodes, string) codeData)
+        private async void fillRooms((ServerCodes, string) codeData)
         {
             switch (codeData.Item1)
             {
@@ -138,12 +139,13 @@ namespace TIP_Client.ViewModel
                     App.Current.Dispatcher.Invoke(() => Rooms.Clear());
                     break;
                 default:
-                    MessageBox.Show(codeData.Item1.ToString());
+                    DialogContent = codeData.Item1.ToString();
+                    string result = (string)await DialogHost.Show(new OkDialog(), "OkDialog");
                     break;
             }
         }
 
-        private void fillUsers((ServerCodes, string) codeData)
+        private async void fillUsers((ServerCodes, string) codeData)
         {
             switch (codeData.Item1)
             {
@@ -162,7 +164,7 @@ namespace TIP_Client.ViewModel
                             {
                                 if (userData[i].UserID == Client.ClientID) continue;
                                 if(!bwp.ContainsKey(i))
-                                    bwp.Add(i, new BufferedWaveProvider(new WaveFormat(44100, 2)));
+                                    bwp.Add(i, new BufferedWaveProvider(new WaveFormat(48000, 2)));
                                 if(!waveOut.ContainsKey(i))
                                     waveOut.Add(i, new WaveOut());
                             }
@@ -171,16 +173,22 @@ namespace TIP_Client.ViewModel
                         }
                         catch (Exception ex)
                         {
-                            MessageBox.Show(ex.Message);
+                            DialogContent = ex.Message;
+                            await DialogHost.Show(new OkDialog(), "OkDialog");
                         }
 
                     }
                     break;
                 case ServerCodes.USER_NOT_IN_ROOM_ERROR:
-                    if(inRoom) MessageBox.Show(codeData.Item1.ToString());
+                    if(inRoom)
+                    {
+                        DialogContent = codeData.Item1.ToString();
+                        await DialogHost.Show(new OkDialog(), "OkDialog");
+                    }
                     break;
                 default:
-                    MessageBox.Show(codeData.Item1.ToString());
+                    DialogContent = codeData.Item1.ToString();
+                    await DialogHost.Show(new OkDialog(), "OkDialog");
                     break;
             }
         }
@@ -188,7 +196,6 @@ namespace TIP_Client.ViewModel
         private void playAudio(byte[] data)
         {
             var decoded = Tools.ShortsToBytes(AudioHelper.DecodeG722(data.Skip(1).ToArray(), 48000));
-            //bwp.ClearBuffer();
             var id = Convert.ToInt32(data[0]);
             if(bwp.ContainsKey(id)) 
                 bwp[id].AddSamples(decoded, 0, decoded.Length);
@@ -200,13 +207,21 @@ namespace TIP_Client.ViewModel
             if(udpClient.Client != null) udpClient.Send(encoded, encoded.Length, new IPEndPoint(IPAddress.Parse(Client.connection.IPAddr), Client.connection.Port));
         }
 
-        private void DeleteRoomAction()
+        private async void DeleteRoomAction()
         {
-            if (currentRoomId == SelectedRoom.RoomID) LeaveRoomAction();
-            var codeResp = Client.DeleteRoom(SelectedRoom.RoomID);
+            if (SelectedRoom.RoomCreatorUserID != Client.ClientID) return;
+            DialogContent = "Czy na pewno chcesz usunąć zapisany adres?";
+            string result = (string)await DialogHost.Show(new OkCancelDialog(), "DeleteRoomDialog");
+            if (result == "Accept")
+            {
+                if(currentRoomId == SelectedRoom.RoomID) LeaveRoomAction();
+                var codeResp = Client.DeleteRoom(SelectedRoom.RoomID);
+            }
+            
+            
         }
 
-        private void LeaveRoomAction()
+        private async void LeaveRoomAction()
         {
             var resp = Client.LeaveRoom();
             switch (resp.Item1)
@@ -217,7 +232,8 @@ namespace TIP_Client.ViewModel
                     UsersInRoom.Clear();
                     break;
                 default:
-                    MessageBox.Show(resp.Item1.ToString());
+                    DialogContent = resp.Item1.ToString();
+                    await DialogHost.Show(new OkDialog(), "OkDialog");
                     break;
             }
         }
@@ -251,7 +267,7 @@ namespace TIP_Client.ViewModel
 
         private long currentRoomId;
 
-        private void EnterRoomAction()
+        private async void EnterRoomAction()
         {
             if (inRoom && selectedRoom.RoomID != currentRoomId)
             {
@@ -267,12 +283,13 @@ namespace TIP_Client.ViewModel
                     currentRoomId = SelectedRoom.RoomID;
                     break;
                 default:
-                    MessageBox.Show("TODO " + resp.Item1.ToString());
+                    DialogContent = resp.Item1.ToString();
+                    await DialogHost.Show(new OkDialog(), "OkDialog");
                     break;
             }
         }
 
-        private void NewRoomAction()
+        private async void NewRoomAction()
         {
             var resp = Client.CreateRoom(NewRoomName, "", NewRoomLimit);
             switch (resp.Item1)
@@ -282,34 +299,34 @@ namespace TIP_Client.ViewModel
                     NewRoomLimit = 0;
                     break;
                 default:
-                    MessageBox.Show("TODO " + resp.Item1.ToString());
+                    DialogContent = resp.Item1.ToString();
+                    await DialogHost.Show(new OkDialog(), "OkDialog");
                     break;
             }
         }
 
-        private void LogoutAction()
+        private async void LogoutAction()
         {
             if (inRoom) LeaveRoomAction();
-            Task.Run(() => Client.Logout()).ContinueWith(t =>
+            var t = Client.Logout();
+            switch (t.Item1)
             {
+                case 0:
+                    loggedIn = false;
+                    udpClient.Close();
+                    Client.ClientID = null;
+                    mainVM.NavigateTo("Login");
+                    break;
+                case ServerCodes.USER_NOT_LOGGED_ERROR:
+                    DialogContent = "Użytkownik nie jest zalogowany";
+                    await DialogHost.Show(new OkDialog(), "OkDialog");
+                    break;
+                default:
+                    DialogContent = t.Item1.ToString();
+                    await DialogHost.Show(new OkDialog(), "OkDialog");
+                    break;
+            }
 
-                switch (t.Result.Item1)
-                {
-                    case 0:
-                        loggedIn = false;
-                        udpClient.Close();
-                        Client.ClientID = null;
-                        mainVM.NavigateTo("Login");
-                        break;
-                    case ServerCodes.USER_NOT_LOGGED_ERROR:
-                        MessageBox.Show("Użytkownik nie jest zalogowany");
-                        break;
-                    default:
-                        MessageBox.Show("TODO " + t.Result.Item1.ToString());
-                        break;
-                }
-
-            });
         }
 
         private GetRoomsData.RoomData selectedRoom;
@@ -526,6 +543,19 @@ namespace TIP_Client.ViewModel
             for (int waveInDevice = 0; waveInDevice < waveInDevices; waveInDevice++)
             {
                 InputDeviceList.Add(WaveIn.GetCapabilities(waveInDevice));
+            }
+        }
+        private string dialogContent;
+        public string DialogContent
+        {
+            get
+            {
+                return dialogContent;
+            }
+            set
+            {
+                dialogContent = value;
+                OnPropertyChanged(nameof(DialogContent));
             }
         }
     }

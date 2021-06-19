@@ -13,7 +13,7 @@
         TextOptions.TextRenderingMode="Auto"
         xmlns:local="clr-namespace:TIP_Client"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Komunikator TIP" Height="450" Width="800">
     <Grid>
         <ContentControl Content="{Binding SelectedVM}" Grid.ColumnSpan="2"/>
     </Grid>

@@ -23,11 +23,11 @@ using UserControl = System.Windows.Controls.UserControl;
 namespace TIP_Client.View
 {
     /// <summary>
-    /// Interaction logic for TestingView.xaml
+    /// Interaction logic for AudioView.xaml
     /// </summary>
-    public partial class TestingView : UserControl
+    public partial class AudioView : UserControl
     {
-        public TestingView()
+        public AudioView()
         {
             InitializeComponent();
         }

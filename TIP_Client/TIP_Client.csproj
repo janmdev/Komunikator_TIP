@@ -19,4 +19,11 @@
     <Folder Include="Converters\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Page Update="View\OkDialog.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+
 </Project>

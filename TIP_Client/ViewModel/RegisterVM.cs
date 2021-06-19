@@ -4,7 +4,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
+using MaterialDesignThemes.Wpf;
 using Shared;
+using TIP_Client.View;
 using TIP_Client.ViewModel.MVVM;
 
 namespace TIP_Client.ViewModel
@@ -36,7 +38,7 @@ namespace TIP_Client.ViewModel
         }
         public ICommand RegisterCommand { get; set; }
 
-        public void RegisterAction(object args)
+        public async void RegisterAction(object args)
         {
             //Task.Run(async () => await Client.RegisterAction(Login, "123"));
             if (args is object[] argsArr)
@@ -45,7 +47,8 @@ namespace TIP_Client.ViewModel
                 {
                     if (pb0.Password != pb1.Password)
                     {
-                        MessageBox.Show("Hasła nie są takie same");
+                        DialogContent = "Hasła nie są takie same";
+                        await DialogHost.Show(new OkDialog(), "OkDialog");
                         return;
                     }
 
@@ -56,26 +59,31 @@ namespace TIP_Client.ViewModel
                 if (!Regex.Match(pb1.Password,
                     "(?=.*[!\"#$%&'()*+,\\-\\./:<>=?@\\[\\]\\^_{}|~])(?=.*[A-Z])(?!.*\\$).{8,255}").Success)
                 {
-                    MessageBox.Show("Hasło nie spełnia warunków");
+                    
+                    DialogContent = "Hasło nie spełnia warunków";
+                    await DialogHost.Show(new OkDialog(), "OkDialog");
                     return;
                 }
 #endif
-                    Task.Run(() => Client.Register(Login, pb0.Password)).ContinueWith(t =>
+                    var t = Client.Register(Login, pb0.Password);
+                    
+                    switch (t.Item1)
                     {
-                        switch (t.Result.Item1)
-                        {
-                            case ServerCodes.OK:
-                                MessageBox.Show("Konto zostało utworzone");
-                                clear(pb0,pb1);
-                                break;
-                            case ServerCodes.USER_ALREADY_EXIST_ERROR:
-                                MessageBox.Show("Użytkownik z takim loginem już istnieje");
-                                break;
-                            default:
-                                MessageBox.Show("Nierozpoznany błąd");
-                                break;
-                        }
-                    });
+                        case ServerCodes.OK:
+                            DialogContent = "Konto zostało utworzone";
+                            await DialogHost.Show(new OkDialog(), "OkDialog");
+                            clear(pb0,pb1);
+                            break;
+                        case ServerCodes.USER_ALREADY_EXIST_ERROR:
+                            DialogContent = "Użytkownik z takim loginem już istnieje";
+                            await DialogHost.Show(new OkDialog(), "OkDialog");
+                            break;
+                        default:
+                            DialogContent = "Nierozpoznany błąd";
+                            await DialogHost.Show(new OkDialog(), "OkDialog");
+                            break;
+                    }
+                    
                 }
             }
             
@@ -96,6 +104,19 @@ namespace TIP_Client.ViewModel
         public void GoBack()
         {
             mainVM.NavigateTo("Login");
+        }
+        private string dialogContent;
+        public string DialogContent
+        {
+            get
+            {
+                return dialogContent;
+            }
+            set
+            {
+                dialogContent = value;
+                OnPropertyChanged(nameof(DialogContent));
+            }
         }
     }
 }

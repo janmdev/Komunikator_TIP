@@ -4,12 +4,14 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using MaterialDesignThemes.Wpf;
 using Shared;
 using Shared.DataClasses.Server;
+using TIP_Client.View;
+using TIP_Client.ViewModel.MVVM;
 
 namespace TIP_Client.ViewModel
 {
-    using TIP_Client.ViewModel.MVVM;
 
     internal class LoginVM : ViewModelBase
     {
@@ -19,7 +21,7 @@ namespace TIP_Client.ViewModel
         {
             this.mainVM = mainVM;
             LoginCommand = new Command((args) => LoginF(args));
-            RegisterCommand = new Command((args) => RegisterNav());
+            RegisterCommand = new Command((args) => mainVM.NavigateTo("RegisterAction"));
         }
 
 
@@ -38,42 +40,52 @@ namespace TIP_Client.ViewModel
             }
         }
         public ICommand LoginCommand { get; set; }
-        private void LoginF(object args)
+        private async void LoginF(object args)
         {
             if (args is PasswordBox pb)
             {
-                Task.Run(() => Client.Login(Login, pb.Password)).ContinueWith((t) =>
+                var t = Client.Login(Login, pb.Password);
+                switch (t.Item1)
                 {
-                    switch (t.Result.Item1)
-                    {
-                        case ServerCodes.OK:
-                            Client.ClientID = (JsonSerializer.Deserialize<GetUserLogin>(t.Result.Item2)).ClientID;
-                            mainVM.NavigateTo("Testing");
-                            break;
-                        case ServerCodes.USER_ALREADY_LOGGED_ERROR:
-                            MessageBox.Show("Użytkownik już jest zalogowany");
-                            break;
-                        case ServerCodes.USER_LOGGED_ERROR:
-                            MessageBox.Show("Użytkownik już jest zalogowany");
-                            break;
-                        case ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR:
-                            MessageBox.Show("Błędne dane logowani");
-                            break;
-                        default:
-                            MessageBox.Show("Nierozpoznany błąd");
-                            break;
-                    }
-                });
+                    case ServerCodes.OK:
+                        Client.ClientID = (JsonSerializer.Deserialize<GetUserLogin>(t.Item2)).ClientID;
+                        mainVM.NavigateTo("Testing");
+                        break;
+                    case ServerCodes.USER_ALREADY_LOGGED_ERROR:
+                        DialogContent = "Użytkownik już jest zalogowany";
+                        await DialogHost.Show(new OkDialog(), "OkDialog");
+                        break;
+                    case ServerCodes.USER_LOGGED_ERROR:
+                        DialogContent = "Użytkownik już jest zalogowany";
+                        await DialogHost.Show(new OkDialog(), "OkDialog");
+                        break;
+                    case ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR:
+                        DialogContent = "Błędne dane logowania";
+                        await DialogHost.Show(new OkDialog(), "OkDialog");
+                        break;
+                    default:
+                        DialogContent = "Nierozpoznany błąd";
+                        await DialogHost.Show(new OkDialog(), "OkDialog");
+                        break;
+                }
+                
             }
         }
-
-
         public ICommand RegisterCommand { get; set; }
 
-        private void RegisterNav()
-        {
 
-            mainVM.NavigateTo("RegisterAction");
+        private string dialogContent;
+        public string DialogContent
+        {
+            get
+            {
+                return dialogContent;
+            }
+            set
+            {
+                dialogContent = value;
+                OnPropertyChanged(nameof(DialogContent));
+            }
         }
     }
 }
