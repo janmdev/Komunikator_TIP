@@ -147,8 +147,8 @@ namespace TIP_Server
             LoginData loginData = JsonSerializer.Deserialize<LoginData>(dataJSON);
 #if DEBUG
 #else
-            if (!Regex.Match(loginData.Username, "^[\\w]{3,16}$").Success) return ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR;
-            if (!Regex.Match(loginData.Password, "(?=.*[!\"#$%&'()*+,\\-\\./:<>=?@\\[\\]\\^_{}|~])(?=.*[A-Z])(?!.*\\$).{8,255}").Success) return ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR;
+            if (!Regex.Match(loginData.Username, "^[\\w]{3,16}$").Success) return (ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR,"");
+            if (!Regex.Match(loginData.Password, "(?=.*[!\"#$%&'()*+,\\-\\./:<>=?@\\[\\]\\^_{}|~])(?=.*[A-Z])(?!.*\\$).{8,255}").Success) return (ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR,"");
 #endif
             if ((userID = DatabaseControl.CheckUserPassword(loginData.Username, loginData.Password)) < 0) return (ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR,"");
             if (clients[CID].Logged) return (ServerCodes.USER_ALREADY_LOGGED_ERROR,"");
