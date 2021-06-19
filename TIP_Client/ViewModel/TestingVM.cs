@@ -10,6 +10,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
@@ -157,8 +158,9 @@ namespace TIP_Client.ViewModel
                         });
                         try
                         {
-                            for(int i = 0; i <= userData.Count; i++)
+                            for(int i = 0; i < userData.Count; i++)
                             {
+                                if (userData[i].UserID == Client.ClientID) continue;
                                 if(!bwp.ContainsKey(i))
                                     bwp.Add(i, new BufferedWaveProvider(new WaveFormat(44100, 2)));
                                 if(!waveOut.ContainsKey(i))
@@ -296,6 +298,7 @@ namespace TIP_Client.ViewModel
                     case 0:
                         loggedIn = false;
                         udpClient.Close();
+                        Client.ClientID = null;
                         mainVM.NavigateTo("Login");
                         break;
                     case ServerCodes.USER_NOT_LOGGED_ERROR:

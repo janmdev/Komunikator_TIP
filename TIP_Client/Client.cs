@@ -15,7 +15,7 @@ namespace TIP_Client
     public static class Client
     {
         public static TcpClient TCP { get; set; }
-
+        public static long? ClientID { get; set; }
         private static TcpListener listener { get; set; }
         private static object serverConvLock = new object();
         public static ConnectionModel connection;

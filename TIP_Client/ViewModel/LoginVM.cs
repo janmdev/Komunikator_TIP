@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Shared;
+using Shared.DataClasses.Server;
 
 namespace TIP_Client.ViewModel
 {
@@ -45,6 +47,7 @@ namespace TIP_Client.ViewModel
                     switch (t.Result.Item1)
                     {
                         case ServerCodes.OK:
+                            Client.ClientID = (JsonSerializer.Deserialize<GetUserLogin>(t.Result.Item2)).ClientID;
                             mainVM.NavigateTo("Testing");
                             break;
                         case ServerCodes.USER_ALREADY_LOGGED_ERROR:
