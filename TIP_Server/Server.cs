@@ -20,8 +20,6 @@ namespace TIP_Server
             Server.serverEngine = new ServerEngine(clientUdpPort);
             Server.runServer = true;
 
-            ServerEngine serverEngine = new ServerEngine(clientUdpPort);
-
             Task tcpTask = Task.Run(() => {
                 Server.tcpConnection = new TCP_Connection(Server.serverPort);
                 tcpConnection.Start();
