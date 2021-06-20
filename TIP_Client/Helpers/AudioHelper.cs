@@ -27,7 +27,6 @@ namespace TIP_Client.Helpers
                 Buffer.BlockCopy(outputBuffer, 0, outputBuffer2, 0, length);
                 outputBuffer = outputBuffer2;
             }
-
             return outputBuffer;
         }
 

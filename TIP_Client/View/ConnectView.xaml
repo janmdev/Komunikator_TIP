@@ -10,7 +10,8 @@
     <Grid>
         <TextBox Style="{StaticResource MaterialDesignFloatingHintTextBox}" md:HintAssist.Hint="Adres IP" HorizontalAlignment="Center" Height="50" Margin="0,121,0,0"  Text="{Binding IPAddr}" TextWrapping="Wrap" VerticalAlignment="Top" Width="232"/>
         <TextBox Style="{StaticResource MaterialDesignFloatingHintTextBox}" md:HintAssist.Hint="Port"  HorizontalAlignment="Center" Height="50" Margin="0,176,0,0" Text="{Binding Port}" TextWrapping="Wrap" VerticalAlignment="Top" Width="232"/>
-        <Button Content="Connect" Command="{Binding ConnectCommand}" HorizontalAlignment="Center" Height="36" Margin="0,247,0,0" VerticalAlignment="Top" Width="232"/>
-
+        <Button Content="Połącz" Command="{Binding ConnectCommand}" HorizontalAlignment="Center" Height="36" Margin="0,247,0,0" VerticalAlignment="Top" Width="232"/>
+        <md:DialogHost Identifier = "OkDialog" Style="{StaticResource MaterialDesignEmbeddedDialogHost}" CloseOnClickAway = "True" >
+        </md:DialogHost >
     </Grid>
 </UserControl>

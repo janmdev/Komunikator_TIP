@@ -33,9 +33,9 @@
             </DataGrid.InputBindings>
 
         </DataGrid>
-        <TextBox HorizontalAlignment="Left" Height="25" Margin="91,328,0,0" Text="{Binding NewRoomName}" TextWrapping="Wrap" VerticalAlignment="Top" Width="173"/>
-        <TextBox HorizontalAlignment="Left" Height="25" Margin="283,328,0,0" Text ="{Binding NewRoomLimit}"  TextWrapping="Wrap" VerticalAlignment="Top" Width="51"/>
-        <Button Command="{Binding NewRoomCommand}" HorizontalAlignment="Left" Height="25" Margin="355,328,0,0" VerticalAlignment="Top" Width="45">
+        <TextBox HorizontalAlignment="Left" Style="{StaticResource MaterialDesignFloatingHintTextBox}" md:HintAssist.Hint="Nazwa" Height="50" Margin="91,328,0,0" Text="{Binding NewRoomName}" TextWrapping="Wrap" VerticalAlignment="Top" Width="173"/>
+        <TextBox HorizontalAlignment="Left" Style="{StaticResource MaterialDesignFloatingHintTextBox}" md:HintAssist.Hint="Limit" Height="50" Margin="283,328,0,0" Text ="{Binding NewRoomLimit}"  TextWrapping="Wrap" VerticalAlignment="Top" Width="51"/>
+        <Button Command="{Binding NewRoomCommand}" HorizontalAlignment="Left" Height="25" Margin="355,353,0,0" VerticalAlignment="Top" Width="45">
             <md:PackIcon Kind="Add"/>
         </Button>
         <DataGrid IsReadOnly="True" CanUserAddRows="False" ItemsSource="{Binding UsersInRoom}" AutoGenerateColumns="False" HorizontalAlignment="Left" Height="219" Margin="439,92,0,0" VerticalAlignment="Top" Width="268">
