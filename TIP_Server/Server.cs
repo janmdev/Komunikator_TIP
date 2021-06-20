@@ -10,16 +10,15 @@ namespace TIP_Server
     {
 
         private static readonly ushort serverPort = 41234;
+        private static readonly ushort clientUdpPort = 41234;
         private static ServerEngine serverEngine;
         private static bool runServer;
         private static TCP_Connection tcpConnection;
 
         static void Main(string[] args) {
 
-            Server.serverEngine = new ServerEngine();
+            Server.serverEngine = new ServerEngine(clientUdpPort);
             Server.runServer = true;
-
-            ServerEngine serverEngine = new ServerEngine();
 
             Task tcpTask = Task.Run(() => {
                 Server.tcpConnection = new TCP_Connection(Server.serverPort);

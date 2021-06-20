@@ -24,12 +24,15 @@ namespace TIP_Server
 
         private readonly object lastCIDIncLock;
 
-        public ServerEngine() {
+        private readonly ushort clientUdpPort;
+
+        public ServerEngine(ushort clientUdpPort) {
             lastCID = 0;
             lastCIDIncLock = new object();
             clients = new ConcurrentDictionary<long, Client>();
             rooms = DatabaseControl.GetRooms();
             recivedAudio = new ConcurrentDictionary<string, ConcurrentQueue<byte[]>>();
+            this.clientUdpPort = clientUdpPort;
         }
 
         public void ClientProcessAsync(TcpClient tcpClient) {
@@ -55,6 +58,7 @@ namespace TIP_Server
                 switch (clientCode) {
                     case ClientCodes.DISCONNECT:
                         serverCode = DisconnectMethod(CID, ref processClient);
+                        processClient = false;
                         break;
                     case ClientCodes.LOGIN:
                         (serverCode, serverDataJSON) = LoginMethod(CID, clientDataJSON);
@@ -96,8 +100,8 @@ namespace TIP_Server
             while (runServer) {
                 IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Any, 0);
                 byte[] audioBytes = udpAudioListener.Receive(ref clientEndPoint);
-                if (!recivedAudio.ContainsKey(clientEndPoint.ToString()) || (recivedAudio[clientEndPoint.ToString()] == null))
-                {
+                clientEndPoint.Port = clientUdpPort;
+                if (!recivedAudio.ContainsKey(clientEndPoint.ToString()) || (recivedAudio[clientEndPoint.ToString()] == null)) {
                     recivedAudio[clientEndPoint.ToString()] = new ConcurrentQueue<byte[]>();
                 }
                 recivedAudio[clientEndPoint.ToString()].Enqueue(audioBytes);
@@ -141,39 +145,40 @@ namespace TIP_Server
             return 0;
         }
 
-        private (ServerCodes,string) LoginMethod(long CID, string dataJSON) {
+        private (ServerCodes, string) LoginMethod(long CID, string dataJSON) {
             long userID;
             LoginData loginData = JsonSerializer.Deserialize<LoginData>(dataJSON);
-#if DEBUG
-#else
-            if (!Regex.Match(loginData.Username, "^[\\w]{3,16}$").Success) return (ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR,"");
-            if (!Regex.Match(loginData.Password, "(?=.*[!\"#$%&'()*+,\\-\\./:<>=?@\\[\\]\\^_{}|~])(?=.*[A-Z])(?!.*\\$).{8,255}").Success) return (ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR,"");
-#endif
-            if ((userID = DatabaseControl.CheckUserPassword(loginData.Username, loginData.Password)) < 0) return (ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR,"");
-            if (clients[CID].Logged) return (ServerCodes.USER_ALREADY_LOGGED_ERROR,"");
+
+            if (!Regex.Match(loginData.Username, "^[\\w]{3,16}$").Success) return (ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR, "");
+            if (!Regex.Match(loginData.Password, "(?=.*[!\"#$%&'()*+,\\-\\./:<>=?@\\[\\]\\^_{}|~])(?=.*[A-Z])(?!.*\\$).{8,255}").Success) return (ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR, "");
+
+            if ((userID = DatabaseControl.CheckUserPassword(loginData.Username, loginData.Password)) < 0) return (ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR, "");
+            if (clients[CID].Logged) return (ServerCodes.USER_ALREADY_LOGGED_ERROR, "");
             clients[CID].UserID = userID;
             clients[CID].Username = loginData.Username;
             clients[CID].Logged = true;
-            return (ServerCodes.OK,JsonSerializer.Serialize(new GetUserLogin() { ClientID = userID }));
+            return (ServerCodes.OK, JsonSerializer.Serialize(new GetUserLogin() { ClientID = userID }));
         }
 
         private ServerCodes LogoutMethod(long CID) {
+            long roomID = -1;
+            if (clients[CID].InRoom) roomID = clients[CID].CurrentRoomID;
             clients[CID].UserID = -1;
             clients[CID].Username = "";
             clients[CID].Logged = false;
             clients[CID].InRoom = false;
             clients[CID].Talking = false;
+            if (roomID != -1) rooms[roomID].Leave(CID);
             return 0;
         }
 
         private ServerCodes RegistrationMethod(long CID, string dataJSON) {
             if (clients[CID].Logged) return ServerCodes.USER_LOGGED_ERROR;
             RegistrationData registrationData = JsonSerializer.Deserialize<RegistrationData>(dataJSON);
-#if DEBUG
-#else
+
             if (!Regex.Match(registrationData.Username, "^[\\w]{3,16}$").Success) return ServerCodes.REGISTRATION_ERROR;
             if (!Regex.Match(registrationData.Password, "(?=.*[!\"#$%&'()*+,\\-\\./:<>=?@\\[\\]\\^_{}|~])(?=.*[A-Z])(?!.*\\$).{8,255}").Success) return ServerCodes.REGISTRATION_ERROR;
-#endif
+
             if (DatabaseControl.CheckIfUserExists(registrationData.Username)) return ServerCodes.USER_ALREADY_EXIST_ERROR;
             if (DatabaseControl.AddNewUser(registrationData.Username, registrationData.Password) < 0) return ServerCodes.REGISTRATION_ERROR;
             return ServerCodes.OK;
