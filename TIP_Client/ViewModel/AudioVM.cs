@@ -111,7 +111,7 @@ namespace TIP_Client.ViewModel
             waveIn = new WaveInEvent();
             waveIn.WaveFormat = new WaveFormat(48000, 2);
             waveIn.DeviceNumber = getDeviceIn(InputDeviceSelected);
-            waveIn.BufferMilliseconds = 50;
+            waveIn.BufferMilliseconds = 10;
             waveIn.DataAvailable += new EventHandler<WaveInEventArgs>(SendG722);
         }
 
