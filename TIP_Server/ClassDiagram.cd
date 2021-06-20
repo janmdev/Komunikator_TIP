@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Shared.TCP_Protocol">
+    <Position X="1.25" Y="1" Width="1.5" />
+    <TypeIdentifier />
+  </Class>
+  <Class Name="TIP_Server.Client">
+    <Position X="4.5" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAgCAAIAAAAABQAAAAgAAAAAwAAAAAAAEAAQAAA=</HashCode>
+      <FileName>Client.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TIP_Server.DatabaseControl">
+    <Position X="12.25" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAIACAAAAAAAgAAQCQAAAAAAAQgAAAAAEAAgAAAUA=</HashCode>
+      <FileName>DatabaseControl.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TIP_Server.Room">
+    <Position X="9.5" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAEAAAAAAAAgEAAAAIBAAAAAAAEEAAAgAAAAABAQAAI=</HashCode>
+      <FileName>Room.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TIP_Server.Server">
+    <Position X="9.5" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAA=</HashCode>
+      <FileName>Server.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TIP_Server.ServerEngine">
+    <Position X="7" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AEgQAAACABAgCCgBAAIAgAAiCAAAAAAAAAAAgEAQIAA=</HashCode>
+      <FileName>ServerEngine.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TIP_Server.TCP_Connection">
+    <Position X="3.75" Y="1" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAIAAAEABAAAA=</HashCode>
+      <FileName>TCP_Connection.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
