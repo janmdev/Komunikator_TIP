@@ -56,6 +56,7 @@ namespace TIP_Server
                 switch (clientCode) {
                     case ClientCodes.DISCONNECT:
                         serverCode = DisconnectMethod(CID, ref processClient);
+                        processClient = false;
                         break;
                     case ClientCodes.LOGIN:
                         (serverCode, serverDataJSON) = LoginMethod(CID, clientDataJSON);
@@ -159,11 +160,14 @@ namespace TIP_Server
         }
 
         private ServerCodes LogoutMethod(long CID) {
+            long roomID = -1;
+            if (clients[CID].InRoom) roomID = clients[CID].CurrentRoomID;
             clients[CID].UserID = -1;
             clients[CID].Username = "";
             clients[CID].Logged = false;
             clients[CID].InRoom = false;
             clients[CID].Talking = false;
+            if (roomID != -1) rooms[roomID].Leave(CID);
             return 0;
         }
 

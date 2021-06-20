@@ -10,7 +10,7 @@ namespace TIP_Server
     {
         static void Main(string[] args) {
 
-            string serverIP = "192.168.1.109";
+            string serverIP = "127.0.0.1";
             ushort serverPort = 41234;
             bool runServer = true;
 
@@ -25,6 +25,7 @@ namespace TIP_Server
                     clientsTasks.Add(Task.Run(() => {
                         serverEngine.ClientProcessAsync(tcpClient);
                     }));
+
                 }
                 tcpConnection.Stop();
             });
