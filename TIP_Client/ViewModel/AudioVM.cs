@@ -46,7 +46,8 @@ namespace TIP_Client.ViewModel
             Volume = 100;
             bwp = new Dictionary<int, BufferedWaveProvider>();
             udpClient = new UdpClient();
-            udpClient.Client.Bind(Client.TCP.Client.LocalEndPoint);
+            //udpClient.Client.Bind(Client.TCP.Client.LocalEndPoint);
+            udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, Client.connection.Port));
             Rooms = new ObservableCollection<GetRoomsData.RoomData>();
             UsersInRoom = new ObservableCollection<GetUsersData.UserData>();
             OutputDeviceList = new ObservableCollection<WaveOutCapabilities>();
@@ -111,7 +112,7 @@ namespace TIP_Client.ViewModel
             waveIn = new WaveInEvent();
             waveIn.WaveFormat = new WaveFormat(48000, 2);
             waveIn.DeviceNumber = getDeviceIn(InputDeviceSelected);
-            waveIn.BufferMilliseconds = 10;
+            waveIn.BufferMilliseconds = 50;
             waveIn.DataAvailable += new EventHandler<WaveInEventArgs>(SendG722);
         }
 
@@ -208,8 +209,18 @@ namespace TIP_Client.ViewModel
 
         private void SendG722(object sender, WaveInEventArgs e)
         {
+            //var arrays = Split(e.Buffer);
             var encoded = AudioHelper.EncodeG722(e.Buffer, 48000);
             if(udpClient.Client != null) udpClient.Send(encoded, encoded.Length, new IPEndPoint(IPAddress.Parse(Client.connection.IPAddr), Client.connection.Port));
+        }
+
+        private List<T[]> Split<T>(T[] source)
+        {
+            return source
+                .Select((x, i) => new { Index = i, Value = x })
+                .GroupBy(x => x.Index / 512)
+                .Select(x => x.Select(v => v.Value).ToArray())
+                .ToList();
         }
 
         private async void DeleteRoomAction()
