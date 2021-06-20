@@ -24,12 +24,15 @@ namespace TIP_Server
 
         private readonly object lastCIDIncLock;
 
-        public ServerEngine() {
+        private readonly ushort clientUdpPort;
+
+        public ServerEngine(ushort clientUdpPort) {
             lastCID = 0;
             lastCIDIncLock = new object();
             clients = new ConcurrentDictionary<long, Client>();
             rooms = DatabaseControl.GetRooms();
             recivedAudio = new ConcurrentDictionary<string, ConcurrentQueue<byte[]>>();
+            this.clientUdpPort = clientUdpPort;
         }
 
         public void ClientProcessAsync(TcpClient tcpClient) {
@@ -98,6 +101,7 @@ namespace TIP_Server
             while (runServer) {
                 IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Any, 0);
                 byte[] audioBytes = udpAudioListener.Receive(ref clientEndPoint);
+                clientEndPoint.Port = clientUdpPort;
                 if (!recivedAudio.ContainsKey(clientEndPoint.ToString()) || (recivedAudio[clientEndPoint.ToString()] == null))
                 {
                     recivedAudio[clientEndPoint.ToString()] = new ConcurrentQueue<byte[]>();

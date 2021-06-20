@@ -8,23 +8,27 @@ namespace TIP_Server
 {
     class Server
     {
+
+        private static readonly ushort serverPort = 41234;
+        private static readonly ushort clientUdpPort = 41234;
+        private static ServerEngine serverEngine;
+        private static bool runServer;
+        private static TCP_Connection tcpConnection;
+
         static void Main(string[] args) {
 
-            ushort serverPort = 41234;
-            bool runServer = true;
-
-            ServerEngine serverEngine = new ServerEngine();
+            Server.serverEngine = new ServerEngine(clientUdpPort);
+            Server.runServer = true;
 
             Task tcpTask = Task.Run(() => {
-                TCP_Connection tcpConnection = new TCP_Connection(serverPort);
+                Server.tcpConnection = new TCP_Connection(Server.serverPort);
                 tcpConnection.Start();
                 List<Task> clientsTasks = new List<Task>();
-                while (runServer) {
+                while (Server.runServer) {
                     TcpClient tcpClient = tcpConnection.GetClient();
                     clientsTasks.Add(Task.Run(() => {
-                        serverEngine.ClientProcessAsync(tcpClient);
+                        Server.serverEngine.ClientProcessAsync(tcpClient);
                     }));
-
                 }
                 tcpConnection.Stop();
             });
