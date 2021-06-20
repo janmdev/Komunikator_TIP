@@ -10,14 +10,13 @@ namespace TIP_Server
     {
         static void Main(string[] args) {
 
-            string serverIP = "127.0.0.1";
             ushort serverPort = 41234;
             bool runServer = true;
 
             ServerEngine serverEngine = new ServerEngine();
 
             Task tcpTask = Task.Run(() => {
-                TCP_Connection tcpConnection = new TCP_Connection(serverIP, serverPort);
+                TCP_Connection tcpConnection = new TCP_Connection(serverPort);
                 tcpConnection.Start();
                 List<Task> clientsTasks = new List<Task>();
                 while (runServer) {
@@ -31,7 +30,7 @@ namespace TIP_Server
             });
 
             Task udpTask = Task.Run(() => {
-                UdpClient udpClient = new UdpClient(new IPEndPoint(IPAddress.Parse(serverIP), serverPort));
+                UdpClient udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, serverPort));
                 serverEngine.AudioListenerAsync(udpClient, ref runServer);
             });
 

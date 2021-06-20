@@ -10,8 +10,8 @@ namespace TIP_Server
     {
         private readonly TcpListener tcpListener;
 
-        public TCP_Connection(string localAddress, ushort port) {
-            this.tcpListener = new TcpListener(IPAddress.Parse(localAddress), port);
+        public TCP_Connection(ushort port) {
+            this.tcpListener = new TcpListener(IPAddress.Any, port);
         }
 
         public void Start() {
