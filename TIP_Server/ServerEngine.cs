@@ -45,7 +45,6 @@ namespace TIP_Server
 
             clients.TryAdd(CID, new Client(clientEndPoint));
 
-            //TODO: Talking
             while (processClient) {
                 var command = TCP_Protocol.Read(stream);
                 ClientCodes clientCode = (ClientCodes)command.code;
