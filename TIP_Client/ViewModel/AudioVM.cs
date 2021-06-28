@@ -208,13 +208,8 @@ namespace TIP_Client.ViewModel
 
         private void SendG722(object sender, WaveInEventArgs e)
         {
-            var arrays = Split(e.Buffer);
-            foreach (var array in arrays)
-            {
-                var encoded = AudioHelper.EncodeG722(array, 48000);
-                if (udpClient.Client != null) udpClient.Send(encoded, encoded.Length, new IPEndPoint(IPAddress.Parse(Client.connection.IPAddr), Client.connection.Port));
-            }
-            
+            var encoded = AudioHelper.EncodeG722(e.Buffer, 48000);
+            if (udpClient.Client != null) udpClient.Send(encoded, encoded.Length, new IPEndPoint(IPAddress.Parse(Client.connection.IPAddr), Client.connection.Port));
         }
 
         private List<T[]> Split<T>(T[] source)
