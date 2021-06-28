@@ -46,8 +46,7 @@ namespace TIP_Client.ViewModel
             Volume = 100;
             bwp = new Dictionary<int, BufferedWaveProvider>();
             udpClient = new UdpClient();
-            //udpClient.Client.Bind(Client.TCP.Client.LocalEndPoint);
-            udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, Client.connection.Port));
+            udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, 41234));
             Rooms = new ObservableCollection<GetRoomsData.RoomData>();
             UsersInRoom = new ObservableCollection<GetUsersData.UserData>();
             OutputDeviceList = new ObservableCollection<WaveOutCapabilities>();
@@ -146,7 +145,7 @@ namespace TIP_Client.ViewModel
                     break;
                 default:
                     DialogContent = codeData.Item1.ToString();
-                    string result = (string)await DialogHost.Show(new OkDialog(), "OkDialog");
+                    await DialogHost.Show(new OkDialog(), "OkDialog");
                     break;
             }
         }
@@ -168,7 +167,7 @@ namespace TIP_Client.ViewModel
                         {
                             for(int i = 0; i < userData.Count; i++)
                             {
-                                if (userData[i].UserID == Client.ClientID) continue;
+                                //if (userData[i].UserID == Client.ClientID) continue;
                                 if(!bwp.ContainsKey(i))
                                     bwp.Add(i, new BufferedWaveProvider(new WaveFormat(48000, 2)));
                                 if(!waveOut.ContainsKey(i))
@@ -209,9 +208,13 @@ namespace TIP_Client.ViewModel
 
         private void SendG722(object sender, WaveInEventArgs e)
         {
-            //var arrays = Split(e.Buffer);
-            var encoded = AudioHelper.EncodeG722(e.Buffer, 48000);
-            if(udpClient.Client != null) udpClient.Send(encoded, encoded.Length, new IPEndPoint(IPAddress.Parse(Client.connection.IPAddr), Client.connection.Port));
+            var arrays = Split(e.Buffer);
+            foreach (var array in arrays)
+            {
+                var encoded = AudioHelper.EncodeG722(array, 48000);
+                if (udpClient.Client != null) udpClient.Send(encoded, encoded.Length, new IPEndPoint(IPAddress.Parse(Client.connection.IPAddr), Client.connection.Port));
+            }
+            
         }
 
         private List<T[]> Split<T>(T[] source)
@@ -233,8 +236,6 @@ namespace TIP_Client.ViewModel
                 if(currentRoomId == SelectedRoom.RoomID) LeaveRoomAction();
                 var codeResp = Client.DeleteRoom(SelectedRoom.RoomID);
             }
-            
-            
         }
 
         private async void LeaveRoomAction()
