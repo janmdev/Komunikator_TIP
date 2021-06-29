@@ -179,8 +179,11 @@ namespace TIP_Client.ViewModel
                         }
                         catch (Exception ex)
                         {
-                            DialogContent = ex.Message;
-                            await DialogHost.Show(new OkDialog(), "OkDialog");
+                            App.Current.Dispatcher.Invoke(async () =>
+                            {
+                                DialogContent = ex.Message;
+                                await DialogHost.Show(new OkDialog(), "OkDialog");
+                            });
                         }
 
                     }
@@ -188,13 +191,19 @@ namespace TIP_Client.ViewModel
                 case ServerCodes.USER_NOT_IN_ROOM_ERROR:
                     if (inRoom)
                     {
-                        DialogContent = codeData.Item1.ToString();
-                        await DialogHost.Show(new OkDialog(), "OkDialog");
+                        App.Current.Dispatcher.Invoke(async () =>
+                        {
+                            DialogContent = codeData.Item1.ToString();
+                            await DialogHost.Show(new OkDialog(), "OkDialog");
+                        });
                     }
                     break;
                 default:
-                    DialogContent = codeData.Item1.ToString();
-                    await DialogHost.Show(new OkDialog(), "OkDialog");
+                    App.Current.Dispatcher.Invoke(async () =>
+                    {
+                        DialogContent = codeData.Item1.ToString();
+                        await DialogHost.Show(new OkDialog(), "OkDialog");
+                    });
                     break;
             }
         }
