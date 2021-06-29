@@ -101,15 +101,15 @@ namespace TIP_Server
                 IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Any, 0);
                 byte[] audioBytes = udpAudioListener.Receive(ref clientEndPoint);
                 if (!recivedAudio.ContainsKey(clientEndPoint.ToString()) || (recivedAudio[clientEndPoint.ToString()] == null)) {
-                    recivedAudio[clientEndPoint.ToString()] = new ConcurrentQueue<byte[]>();
+                    recivedAudio[clientEndPoint.Address.ToString()] = new ConcurrentQueue<byte[]>();
                 }
-                recivedAudio[clientEndPoint.ToString()].Enqueue(audioBytes);
+                recivedAudio[clientEndPoint.Address.ToString()].Enqueue(audioBytes);
             }
         }
 
         private void ClientAudioProcessAsync(long CID) {
             IPEndPoint clientEndPoint = clients[CID].ClientEndPoint;
-            string clientEndPointString = clientEndPoint.ToString();
+            string clientEndPointString = clientEndPoint.Address.ToString();
             UdpClient udpAudioSender = new UdpClient();
 
             while (clients[CID].InRoom) {
