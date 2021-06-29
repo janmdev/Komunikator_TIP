@@ -41,7 +41,7 @@ namespace TIP_Client.ViewModel
             Volume = 100;
             bwp = new Dictionary<long, BufferedWaveProvider>();
             udpClient = new UdpClient();
-            udpClient.Client.Bind(new IPEndPoint(IPAddress.Any,Client.connection.Port));
+            udpClient.Client.Bind(Client.TCP.Client.LocalEndPoint);
             Rooms = new ObservableCollection<GetRoomsData.RoomData>();
             UsersInRoom = new ObservableCollection<GetUsersData.UserData>();
             OutputDeviceList = new ObservableCollection<WaveOutCapabilities>();
@@ -164,7 +164,7 @@ namespace TIP_Client.ViewModel
 
                             foreach (var user in userData)
                             {
-                                if (user.UserID == Client.ClientID) continue;
+                                //if (user.UserID == Client.ClientID) continue;
                                 if (!bwp.ContainsKey(user.UserID))
                                     bwp.Add(user.UserID, new BufferedWaveProvider(waveFormat));
                                 if (!waveOut.ContainsKey(user.UserID))
