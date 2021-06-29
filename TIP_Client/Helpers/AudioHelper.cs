@@ -11,42 +11,32 @@ namespace TIP_Client.Helpers
 {
     public static class AudioHelper
     {
-        public static byte[] EncodeG722(byte[] data, int sampleRate)
+        private static G722Codec codec = new G722Codec();
+        private static G722CodecState encoderState = new G722CodecState(64000, G722Flags.None);
+        private static G722CodecState decoderState = new G722CodecState(64000, G722Flags.None);
+        public static byte[] EncodeG722(byte[] data)
         {
-            var codec = new G722Codec();
-            var state = new G722CodecState(sampleRate, G722Flags.SampleRate8000);
 
+            var length = data.Length;
             var wb = new WaveBuffer(data);
-            var encodedLength = data.Length / 2;
+            int encodedLength = length / 4;
             var outputBuffer = new byte[encodedLength];
-            var length = codec.Encode(state, outputBuffer, wb.ShortBuffer, data.Length / 2);
-
-            if (length != outputBuffer.Length)
-            {
-                var outputBuffer2 = new byte[length];
-                Buffer.BlockCopy(outputBuffer, 0, outputBuffer2, 0, length);
-                outputBuffer = outputBuffer2;
-            }
+            int encoded = codec.Encode(encoderState, outputBuffer, wb.ShortBuffer, length / 2);
             return outputBuffer;
         }
 
-        public static short[] DecodeG722(byte[] data, int sampleRate)
+        public static byte[] DecodeG722(byte[] data)
         {
-            var codec = new G722Codec();
-            var state = new G722CodecState(sampleRate, G722Flags.SampleRate8000);
-
-            var wb = new WaveBuffer(data);
-            var outputBuffer = new short[data.Length];
-            var length = codec.Decode(state, outputBuffer, data, data.Length);
-
-            if (length != outputBuffer.Length)
-            {
-                var outputBuffer2 = new short[length];
-                Buffer.BlockCopy(outputBuffer, 0, outputBuffer2, 0, length);
-                outputBuffer = outputBuffer2;
-            }
-
+            var length = data.Length;
+            int decodedLength = length * 4;
+            var outputBuffer = new byte[decodedLength];
+            var wb = new WaveBuffer(outputBuffer);
+            int decoded = codec.Decode(decoderState, wb.ShortBuffer, data, length);
             return outputBuffer;
         }
+
+
+
+
     }
 }
