@@ -168,7 +168,7 @@ namespace TIP_Client.ViewModel
                         {
                             for (int i = 0; i < userData.Count; i++)
                             {
-                                //if (userData[i].UserID == Client.ClientID) continue;
+                                if (userData[i].UserID == Client.ClientID) continue;
                                 if (!bwp.ContainsKey(i))
                                     bwp.Add(i, new BufferedWaveProvider(waveFormat));
                                 if (!waveOut.ContainsKey(i))
