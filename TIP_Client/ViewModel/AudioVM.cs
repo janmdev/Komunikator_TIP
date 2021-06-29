@@ -1,19 +1,14 @@
-﻿using System.Collections.Concurrent;
-using System.Printing.IndexedProperties;
-using System.Threading;
+﻿using System.Collections.Generic;
 using NAudio.Wave;
 using Shared;
 using Shared.DataClasses.Server;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using TIP_Client.Helpers;
@@ -26,11 +21,11 @@ namespace TIP_Client.ViewModel
 
     public class AudioVM : ViewModelBase
     {
-        private Dictionary<int, BufferedWaveProvider> bwp;
+        private Dictionary<long, BufferedWaveProvider> bwp;
 
         private WaveInEvent waveIn;
 
-        private Dictionary<int, WaveOut> waveOut;
+        private Dictionary<long, WaveOut> waveOut;
 
         private UdpClient udpClient;
 
@@ -42,9 +37,9 @@ namespace TIP_Client.ViewModel
         {
             waveFormat = new WaveFormat(24000, 16, 1);
             loggedIn = true;
-            waveOut = new Dictionary<int, WaveOut>();
+            waveOut = new Dictionary<long, WaveOut>();
             Volume = 100;
-            bwp = new Dictionary<int, BufferedWaveProvider>();
+            bwp = new Dictionary<long, BufferedWaveProvider>();
             udpClient = new UdpClient();
             udpClient.Client.Bind(new IPEndPoint(IPAddress.Any,Client.connection.Port));
             Rooms = new ObservableCollection<GetRoomsData.RoomData>();
@@ -166,21 +161,25 @@ namespace TIP_Client.ViewModel
                         });
                         try
                         {
-                            for (int i = 0; i < userData.Count; i++)
+
+                            foreach (var user in userData)
                             {
-                                //if (userData[i].UserID == Client.ClientID) continue;
-                                if (!bwp.ContainsKey(i))
-                                    bwp.Add(i, new BufferedWaveProvider(waveFormat));
-                                if (!waveOut.ContainsKey(i))
-                                    waveOut.Add(i, new WaveOut());
+                                if (user.UserID == Client.ClientID) continue;
+                                if (!bwp.ContainsKey(user.UserID))
+                                    bwp.Add(user.UserID, new BufferedWaveProvider(waveFormat));
+                                if (!waveOut.ContainsKey(user.UserID))
+                                    waveOut.Add(user.UserID, new WaveOut());
                             }
                             InitWaveOut(OutputDeviceSelected);
                             foreach (var wo in waveOut) wo.Value.Play();
                         }
                         catch (Exception ex)
                         {
-                            DialogContent = ex.Message;
-                            await DialogHost.Show(new OkDialog(), "OkDialog");
+                            await App.Current.Dispatcher.Invoke(async () =>
+                            {
+                                DialogContent = ex.Message;
+                                await DialogHost.Show(new OkDialog(), "OkDialog");
+                            });
                         }
 
                     }
@@ -188,21 +187,27 @@ namespace TIP_Client.ViewModel
                 case ServerCodes.USER_NOT_IN_ROOM_ERROR:
                     if (inRoom)
                     {
-                        DialogContent = codeData.Item1.ToString();
-                        await DialogHost.Show(new OkDialog(), "OkDialog");
+                        await App.Current.Dispatcher.Invoke(async () =>
+                        {
+                            DialogContent = codeData.Item1.ToString();
+                            await DialogHost.Show(new OkDialog(), "OkDialog");
+                        });
                     }
                     break;
                 default:
-                    DialogContent = codeData.Item1.ToString();
-                    await DialogHost.Show(new OkDialog(), "OkDialog");
+                    await App.Current.Dispatcher.Invoke(async () =>
+                    {
+                        DialogContent = codeData.Item1.ToString();
+                        await DialogHost.Show(new OkDialog(), "OkDialog");
+                    });
                     break;
             }
         }
 
         private void playAudio(byte[] data)
         {
-            var decoded = AudioHelper.DecodeG722(data.Skip(1).ToArray());
-            var id = Convert.ToInt32(data[0]);
+            var decoded = AudioHelper.DecodeG722(data.Skip(8).ToArray());
+            var id = BitConverter.ToInt64(data.Take(8).ToArray(), 0);
             if (bwp.ContainsKey(id))
                 bwp[id].AddSamples(decoded, 0, decoded.Length);
         }
