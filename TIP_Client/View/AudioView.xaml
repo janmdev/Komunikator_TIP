@@ -44,8 +44,8 @@
                 <DataGridTextColumn Header="Użytkownik" Binding="{Binding UserName}" Width="268"/>
             </DataGrid.Columns>
         </DataGrid>
-        <Button Content="Wyjdź" IsEnabled="{Binding InRoom}" Command="{Binding LeaveRoomCommand}" HorizontalAlignment="Left" Height="25" Margin="439,328,0,0" VerticalAlignment="Top" Width="200"/>
-        <ToggleButton IsEnabled="{Binding InRoom}" IsChecked="{Binding MutedButton}" HorizontalAlignment="Left" Height="25" Margin="644,328,0,0" VerticalAlignment="Top" Width="56"/>
+        <Button Content="Wyjdź" IsEnabled="{Binding InRoom}" Command="{Binding LeaveRoomCommand}" HorizontalAlignment="Left" Height="25" Margin="439,354,0,0" VerticalAlignment="Top" Width="200"/>
+        <ToggleButton IsEnabled="{Binding InRoom}" IsChecked="{Binding MutedButton}" HorizontalAlignment="Left" Height="25" Margin="644,354,0,0" VerticalAlignment="Top" Width="56"/>
         <Label Content="Głośność" HorizontalAlignment="Left" Height="22" Margin="414,20,0,0" Padding="0" VerticalAlignment="Top" Width="76"/>
         <Slider HorizontalAlignment="Left"  Value="{Binding Volume}" Margin="414,50,0,0" VerticalAlignment="Top" Width="200" Minimum="1" Maximum="100"/>
         <md:DialogHost Identifier = "OkDialog" Style="{StaticResource MaterialDesignEmbeddedDialogHost}" CloseOnClickAway = "True" >

@@ -238,6 +238,15 @@ namespace TIP_Client.ViewModel
             {
                 if (currentRoomId == SelectedRoom.RoomID) LeaveRoomAction();
                 var codeResp = Client.DeleteRoom(SelectedRoom.RoomID);
+                switch (codeResp.Item1)
+                {
+                    case ServerCodes.OK:
+                        break;
+                    case ServerCodes.DELETE_ROOM_ERROR:
+                        DialogContent = $"Nie jesteś właścicielem pokoju {SelectedRoom.Name}?";
+                        await DialogHost.Show(new OkDialog(), "OkDialog");
+                        break;
+                }
             }
 
 
