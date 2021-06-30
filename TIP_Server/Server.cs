@@ -14,7 +14,7 @@ namespace TIP_Server
             ushort serverPort = 41234;
             bool runServer = true;
 
-            ServerEngine serverEngine = new ServerEngine();
+            ServerEngine serverEngine = new ServerEngine(serverPort);
 
             Task tcpTask = Task.Run(() => {
                 TCP_Connection tcpConnection = new TCP_Connection(serverPort);

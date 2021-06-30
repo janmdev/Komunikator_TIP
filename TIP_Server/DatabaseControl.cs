@@ -8,7 +8,7 @@ namespace TIP_Server
 {
     public static class DatabaseControl
     {
-        private const string IPAddr = "192.168.1.250";
+        private const string IPAddr = "192.168.1.109";
         private const string user = "projekt_tip_user";
         private const string password = "hSrZzp@x4g<!FY!F";
         private const string databaseName = "projekt_tip";

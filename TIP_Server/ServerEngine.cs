@@ -24,13 +24,16 @@ namespace TIP_Server
 
         private readonly object lastCIDIncLock;
 
-        public ServerEngine()
+        private readonly ushort clientUdpPort;
+
+        public ServerEngine(ushort clientUdpPort)
         {
             lastCID = 0;
             lastCIDIncLock = new object();
             clients = new ConcurrentDictionary<long, Client>();
             rooms = DatabaseControl.GetRooms();
             recivedAudio = new ConcurrentDictionary<string, ConcurrentQueue<byte[]>>();
+            this.clientUdpPort = clientUdpPort;
         }
 
         public void ClientProcessAsync(TcpClient tcpClient)
@@ -48,7 +51,6 @@ namespace TIP_Server
 
             clients.TryAdd(CID, new Client(clientEndPoint));
 
-            //TODO: Talking
             while (processClient)
             {
                 var command = TCP_Protocol.Read(stream);
@@ -61,6 +63,7 @@ namespace TIP_Server
                 {
                     case ClientCodes.DISCONNECT:
                         serverCode = DisconnectMethod(CID, ref processClient);
+                        processClient = false;
                         break;
                     case ClientCodes.LOGIN:
                         (serverCode, serverDataJSON) = LoginMethod(CID, clientDataJSON);
@@ -126,7 +129,7 @@ namespace TIP_Server
                     recivedAudio[clientEndPointString].TryDequeue(out byte[] audioBytes);
                     foreach (long clientInRoom in rooms[clients[CID].CurrentRoomID].ClientsInRoom)
                     {
-                        //if (clientInRoom == CID) continue;
+                        if (clientInRoom == CID) continue;
                         var listBytes = audioBytes.ToList();
                         listBytes.Insert(0, Convert.ToByte(rooms[clients[CID].CurrentRoomID].ClientsInRoom.IndexOf(clientInRoom)));
                         audioBytes = listBytes.ToArray();
@@ -162,8 +165,8 @@ namespace TIP_Server
             LoginData loginData = JsonSerializer.Deserialize<LoginData>(dataJSON);
 #if DEBUG
 #else
-            if (!Regex.Match(loginData.Username, "^[\\w]{3,16}$").Success) return (ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR,"");
-            if (!Regex.Match(loginData.Password, "(?=.*[!\"#$%&'()*+,\\-\\./:<>=?@\\[\\]\\^_{}|~])(?=.*[A-Z])(?!.*\\$).{8,255}").Success) return (ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR,"");
+            if (!Regex.Match(loginData.Username, "^[\\w]{3,16}$").Success) return (ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR, "");
+            if (!Regex.Match(loginData.Password, "(?=.*[!\"#$%&'()*+,\\-\\./:<>=?@\\[\\]\\^_{}|~])(?=.*[A-Z])(?!.*\\$).{8,255}").Success) return (ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR, "");
 #endif
             if ((userID = DatabaseControl.CheckUserPassword(loginData.Username, loginData.Password)) < 0) return (ServerCodes.WRONG_USERNAME_OR_PASSWORD_ERROR, "");
             if (clients[CID].Logged) return (ServerCodes.USER_ALREADY_LOGGED_ERROR, "");
@@ -175,11 +178,14 @@ namespace TIP_Server
 
         private ServerCodes LogoutMethod(long CID)
         {
+            long roomID = -1;
+            if (clients[CID].InRoom) roomID = clients[CID].CurrentRoomID;
             clients[CID].UserID = -1;
             clients[CID].Username = "";
             clients[CID].Logged = false;
             clients[CID].InRoom = false;
             clients[CID].Talking = false;
+            if (roomID != -1) rooms[roomID].Leave(CID);
             return 0;
         }
 

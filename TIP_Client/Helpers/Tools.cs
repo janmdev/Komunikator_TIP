@@ -18,5 +18,15 @@ namespace TIP_Client.Helpers
             }
             return (ServerCodes)Convert.ToInt32(data);
         }
+
+        public static byte[] ShortsToBytes(short[] shArr)
+        {
+            List<byte> bytesList = new List<byte>();
+            foreach (var sh in shArr)
+            {
+                bytesList.AddRange(BitConverter.GetBytes(sh));
+            }
+            return bytesList.ToArray();
+        }
     }
 }
