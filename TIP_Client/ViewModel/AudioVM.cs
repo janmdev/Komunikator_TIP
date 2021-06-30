@@ -231,9 +231,14 @@ namespace TIP_Client.ViewModel
 
         private async void DeleteRoomAction()
         {
-            if (SelectedRoom.RoomCreatorUserID != Client.ClientID) return;
-            DialogContent = $"Czy na pewno chcesz usunąć pokój {SelectedRoom.Name}?";
-            string result = (string)await DialogHost.Show(new OkCancelDialog(), "DeleteRoomDialog");
+            if (SelectedRoom.RoomCreatorUserID != Client.ClientID)
+            {
+                DialogContent = $"Nie jesteś właścicielem pokoju {SelectedRoom.Name}";
+                await DialogHost.Show(new OkDialog(), "OkDialog");
+                return;
+            }
+            DialogContent = $"Czy na pewno chcesz usunąć pokój {SelectedRoom?.Name}?";
+            string result = (string)await DialogHost.Show(new OkCancelDialog(), "OkDialog");
             if (result == "Accept")
             {
                 if (currentRoomId == SelectedRoom.RoomID) LeaveRoomAction();
@@ -242,8 +247,8 @@ namespace TIP_Client.ViewModel
                 {
                     case ServerCodes.OK:
                         break;
-                    case ServerCodes.DELETE_ROOM_ERROR:
-                        DialogContent = $"Nie jesteś właścicielem pokoju {SelectedRoom.Name}?";
+                    default:
+                        DialogContent = codeResp.Item1.ToString();
                         await DialogHost.Show(new OkDialog(), "OkDialog");
                         break;
                 }
