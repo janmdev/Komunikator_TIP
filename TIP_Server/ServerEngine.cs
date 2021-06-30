@@ -131,7 +131,9 @@ namespace TIP_Server
                     {
                         if (clientInRoom == CID) continue;
                         var listBytes = audioBytes.ToList();
-                        listBytes.Insert(0, Convert.ToByte(rooms[clients[CID].CurrentRoomID].ClientsInRoom.IndexOf(clientInRoom)));
+                        listBytes.InsertRange(0,BitConverter.GetBytes(clients[CID].UserID));
+                        //listBytes.Insert(0, Convert.ToByte(rooms[clients[CID].CurrentRoomID].ClientsInRoom.IndexOf(clientInRoom)));
+
                         audioBytes = listBytes.ToArray();
                         udpAudioSender.Send(audioBytes, audioBytes.Length, clients[clientInRoom].ClientEndPoint);
                     }

@@ -21,11 +21,11 @@ namespace TIP_Client.ViewModel
 
     public class AudioVM : ViewModelBase
     {
-        private Dictionary<int, BufferedWaveProvider> bwp;
+        private Dictionary<long, BufferedWaveProvider> bwp;
 
         private WaveInEvent waveIn;
 
-        private Dictionary<int, WaveOut> waveOut;
+        private Dictionary<long, WaveOut> waveOut;
 
         private UdpClient udpClient;
 
@@ -37,9 +37,9 @@ namespace TIP_Client.ViewModel
         {
             waveFormat = new WaveFormat(16000, 1);
             loggedIn = true;
-            waveOut = new Dictionary<int, WaveOut>();
+            waveOut = new Dictionary<long, WaveOut>();
             Volume = 100;
-            bwp = new Dictionary<int, BufferedWaveProvider>();
+            bwp = new Dictionary<long, BufferedWaveProvider>();
             udpClient = new UdpClient();
             udpClient.Client.Bind(Client.TCP.Client.LocalEndPoint);
             Rooms = new ObservableCollection<GetRoomsData.RoomData>();
@@ -165,10 +165,10 @@ namespace TIP_Client.ViewModel
                             for (int i = 0; i < userData.Count; i++)
                             {
                                 if (userData[i].UserID == Client.ClientID) continue;
-                                if (!bwp.ContainsKey(i))
-                                    bwp.Add(i, new BufferedWaveProvider(waveFormat));
-                                if (!waveOut.ContainsKey(i))
-                                    waveOut.Add(i, new WaveOut());
+                                if (!bwp.ContainsKey(userData[i].UserID))
+                                    bwp.Add(userData[i].UserID, new BufferedWaveProvider(waveFormat));
+                                if (!waveOut.ContainsKey(userData[i].UserID))
+                                    waveOut.Add(userData[i].UserID, new WaveOut());
                             }
                             InitWaveOut(OutputDeviceSelected);
                             foreach (var wo in waveOut) wo.Value.Play();
@@ -208,12 +208,10 @@ namespace TIP_Client.ViewModel
         {
             try
             {
-                var decoded = AudioHelper.DecodeG722(data.Skip(1).ToArray());
-                var id = Convert.ToInt32(data[0]);
-                //if (bwp.ContainsKey(id))
-                //    bwp[id].AddSamples(decoded, 0, decoded.Length);
-                if (bwp.Count > 0)
-                    bwp.First().Value.AddSamples(decoded, 0, decoded.Length);
+                var decoded = AudioHelper.DecodeG722(data.Skip(8).ToArray());
+                var id = BitConverter.ToInt64(data.Take(8).ToArray());
+                if (bwp.ContainsKey(id))
+                    bwp[id].AddSamples(decoded, 0, decoded.Length);
             }
             catch (Exception ex)
             {
